@@ -10569,7 +10569,8 @@ namespace BioBaseCLIA.Run
                     int maxTime = int.Parse(minMaxTime[1]);
                     if (ts.TestScheduleStep == TestSchedule.ExperimentScheduleStep.AddBeads ||
                         ts.TestScheduleStep == TestSchedule.ExperimentScheduleStep.AddLiquidTube ||
-                        ts.TestScheduleStep == TestSchedule.ExperimentScheduleStep.AddSingleR)
+                        ts.TestScheduleStep == TestSchedule.ExperimentScheduleStep.AddSingleR ||
+                        (ts.TestScheduleStep == TestSchedule.ExperimentScheduleStep.DoNotTakeCareThis && ((ts.EndTime - ts.StartTime) < 120)))
                     {
                         if (ts.StartTime <= minTime)
                         {
