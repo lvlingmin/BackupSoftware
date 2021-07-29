@@ -10983,11 +10983,13 @@ namespace BioBaseCLIA.Run
                 frmSL.TopLevel = false;
                 frmSL.Parent = this.Parent;
                 frmSL.Show();
+                LogFile.Instance.Write("执行追加未打开窗口 " + addOrdinaryFlag + DateTime.Now.ToString("mm:ss:ms"));
             }
             else
             {
                 frmSampleLoad frmSL = (frmSampleLoad)Application.OpenForms["frmSampleLoad"];
                 frmSL.BringToFront();
+                LogFile.Instance.Write("执行追加打开窗口 " + addOrdinaryFlag + DateTime.Now.ToString("mm:ss:ms"));
             }
             fbtnAddS.Enabled = true;
 
