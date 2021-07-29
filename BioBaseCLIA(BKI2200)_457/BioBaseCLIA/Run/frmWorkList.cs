@@ -10971,6 +10971,9 @@ namespace BioBaseCLIA.Run
             }
 
             #endregion
+
+            LogFile.Instance.Write("点击追加 addOrdinaryFlag " + addOrdinaryFlag + DateTime.Now.ToString("mm:ss:ms"));
+
             fbtnAddS.Enabled = false;
             addOrdinaryFlag = true;//2018-10-18 zlx mod
             frmSampleLoad.DtItemInfoNoStat = GetNoAddLiquid().Copy();
@@ -10987,6 +10990,8 @@ namespace BioBaseCLIA.Run
                 frmSL.BringToFront();
             }
             fbtnAddS.Enabled = true;
+
+            LogFile.Instance.Write("点击追加 2 " + addOrdinaryFlag + DateTime.Now.ToString("mm:ss:ms"));
         }
         /// <summary>
         /// 获取未开始的实验需要的试剂和样本
