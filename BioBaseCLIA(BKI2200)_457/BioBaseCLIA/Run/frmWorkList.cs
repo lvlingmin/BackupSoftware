@@ -490,8 +490,8 @@ namespace BioBaseCLIA.Run
         {
             LogFile.Instance.Write("进入工作列表load" + DateTime.Now.ToString("mm:ss:ms"));
             //2018-08-13 zlx add
-            if (!frmMain.LiquidQueryFlag)
-                frmMain.LiquidQueryFlag = true;
+            //if (!frmMain.LiquidQueryFlag)
+            //    frmMain.LiquidQueryFlag = true;
             if (!NetCom3.isConnect)
             {
                 if (NetCom3.Instance.CheckMyIp_Port_Link())
@@ -2800,8 +2800,8 @@ namespace BioBaseCLIA.Run
             TrayRemoveAllTube = false;//y add 抓空标志位，确定是否触发抓空异常
             isCleanPipeLineNow = false;//add y 20180727 是否在清洗清洗盘管路标志位
             //2018-07-23
-            if (frmMain.BQLiquaid)
-                frmMain.BQLiquaid = false;
+            //if (frmMain.BQLiquaid)
+            //    frmMain.BQLiquaid = false;
             if (dtSpInfo.Select("SampleType='" + getString("keywordText.CalibrationSolution")+"' and Status='0'").Length > 0 ||
                    dtSpInfo.Select("SampleType like '" + getString("keywordText.Calibrator") + "%' and Status='0'").Length > 0 ||
                    //dtSpInfo.Select("SampleType like '" + getString("keywordText.Control") + "%' and Status='0'").Length > 0 ||
@@ -2924,7 +2924,7 @@ namespace BioBaseCLIA.Run
             {
                 NetCom3.Delay(10);
             }
-            frmMain.BQLiquaid = true;//2018-07-21
+            //frmMain.BQLiquaid = true;//2018-07-21
 
             #region 清洗盘反应管状态表
             DataTable dtIniWashTray = OperateIniFile.ReadConfig(iniPathWashTrayInfo);
@@ -3411,9 +3411,20 @@ namespace BioBaseCLIA.Run
                                         }
                                         else if (DateTime.Now.Date.AddDays(-Convert.ToInt32(dtItemInfo.Rows[0][3])).Date > Convert.ToDateTime(ActiveDate))
                                         {
-                                            //2018-07-31 zlx add
-                                            frmMsgShow.MessageShow(getString("btnWorkList.Text"), getString("keywordText.hiscalibrationOver"));
-                                            return false;
+                                            DialogResult result = MessageBox.Show(getString("keywordText.Reagentbatch") + reBNum.Key + getString("keywordText.ProjectName") +
+                                            item.Key + getString("keywordText.SclingOver"), getString("btnWorkList.Text"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+	                                        if(result== DialogResult.No)
+	                                            return false;
+	                                        else
+	                                        {
+	                                            scalingInfo.ItemName = item.Key;
+	                                            scalingInfo.RegenBatch = reBNum.Key;
+	                                            scalingInfo.Num = "0";
+	                                            scalingInfo.TestConc = dtItemInfo.Rows[0][1].ToString();
+	                                            scalingInfo.testType = int.Parse(dtItemInfo.Rows[0][0].ToString());
+	                                            lisScalingInfo.Add(scalingInfo);
+	                                            scalingInfo = new ScalingInfo();
+	                                        }
                                         }
                                         else
                                         {
@@ -3479,8 +3490,22 @@ namespace BioBaseCLIA.Run
                                     else if (DateTime.Now.Date.AddDays(-Convert.ToInt32(dtItemInfo.Rows[0][3])).Date > Convert.ToDateTime(ActiveDate))
                                     {
                                         //2018-07-31 zlx add
-                                        frmMsgShow.MessageShow(getString("btnWorkList.Text"), getString("keywordText.Reagentbatch") + reBNum.Key + getString("keywordText.ProjectName") + item.Key + getString("keywordText.SclingOver"));
-                                        return false;
+                                        DialogResult result = MessageBox.Show(getString("keywordText.Reagentbatch") + reBNum.Key + getString("keywordText.ProjectName") +
+                                          item.Key + getString("keywordText.SclingOver"), getString("btnWorkList.Text"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                                        if (result == DialogResult.No)
+                                            return false;
+                                        else
+                                        {
+                                            scalingInfo.ItemName = item.Key;
+                                            scalingInfo.RegenBatch = reBNum.Key;
+                                            scalingInfo.Num = "0";
+                                            scalingInfo.TestConc = dtItemInfo.Rows[0][1].ToString();
+                                            scalingInfo.testType = int.Parse(dtItemInfo.Rows[0][0].ToString());
+                                            lisScalingInfo.Add(scalingInfo);
+                                            scalingInfo = new ScalingInfo();
+                                        }
+                                        //frmMsgShow.MessageShow(getString("btnWorkList.Text"), getString("keywordText.Reagentbatch") + reBNum.Key + getString("keywordText.ProjectName") + item.Key + getString("keywordText.SclingOver"));
+                                        //return false;
                                     }
                                     else
                                     {
@@ -10455,7 +10480,7 @@ namespace BioBaseCLIA.Run
                 }
                 LogFile.Instance.Write(DateTime.Now + "实验调用了终止实验的程序！");
                 StopStopWatch();//终止倒计时
-                frmMain.BQLiquaid = false;//2018-09-14
+                //frmMain.BQLiquaid = false;//2018-09-14
                 buttonEnableRun(false);
                 frmAddSample.newSample = true;
                 if (btnRunStatus != null)
