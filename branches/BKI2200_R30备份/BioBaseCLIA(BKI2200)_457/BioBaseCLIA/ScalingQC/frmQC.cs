@@ -821,7 +821,10 @@ namespace BioBaseCLIA.ScalingQC
 
         private void fbtnPrint_MouseDown(object sender, MouseEventArgs e)
         {
-            if (txtMean.Text == "" || textSDc.Text == "" || cmbItem.SelectedItem.ToString() == "" || cmbQCBatch.SelectedItem.ToString() == "" || cmbQClevel.SelectedItem.ToString() == "")
+            if (txtMean.Text == "" || textSDc.Text == "" 
+                || cmbItem.SelectedItem==null || cmbItem.SelectedItem.ToString() == "" 
+                || cmbQCBatch.SelectedItem == null || cmbQCBatch.SelectedItem.ToString() == "" 
+                || cmbQClevel.SelectedItem == null || cmbQClevel.SelectedItem.ToString() == "")
             {
                 frmMsgShow.MessageShow(getString("reminder"), getString("PrintError"));
                 return;
