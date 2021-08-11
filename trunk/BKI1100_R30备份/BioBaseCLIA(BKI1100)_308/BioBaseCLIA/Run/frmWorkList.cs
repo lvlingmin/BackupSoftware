@@ -3477,9 +3477,22 @@ namespace BioBaseCLIA.Run
                                     }
                                     else if (DateTime.Now.Date.AddDays(-Convert.ToInt32(dtItemInfo.Rows[0][3])).Date > Convert.ToDateTime(ActiveDate))
                                     {
-                                        //2018-07-31 zlx add
-                                        frmMsgShow.MessageShow(getString("btnWorkList.Text"), getString("keywordText.Reagentbatch") + reBNum.Key + getString("keywordText.ProjectName") + item.Key + getString("keywordText.SclingOver"));
-                                        return false;
+                                        DialogResult result = MessageBox.Show(getString("keywordText.Reagentbatch") + reBNum.Key + getString("keywordText.ProjectName") +
+                                            item.Key + getString("keywordText.SclingOver"), getString("btnWorkList.Text"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                                        if (result == DialogResult.No)
+                                            return false;
+                                        else
+                                        {
+                                            scalingInfo.ItemName = item.Key;
+                                            scalingInfo.RegenBatch = reBNum.Key;
+                                            scalingInfo.Num = "0";
+                                            scalingInfo.TestConc = dtItemInfo.Rows[0][1].ToString();
+                                            scalingInfo.testType = int.Parse(dtItemInfo.Rows[0][0].ToString());
+                                            lisScalingInfo.Add(scalingInfo);
+                                            scalingInfo = new ScalingInfo();
+                                        }
+                                        //frmMsgShow.MessageShow(getString("btnWorkList.Text"), getString("keywordText.Reagentbatch") + reBNum.Key + getString("keywordText.ProjectName") + item.Key + getString("keywordText.SclingOver"));
+
                                     }
                                     else
                                     {
