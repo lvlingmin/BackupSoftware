@@ -934,7 +934,11 @@ namespace BioBaseCLIA.DataQuery
         private void btnImPort_Click(object sender, EventArgs e)
         {
             if (dgvPatientInfo.SelectedRows.Count == 0)
+            {
+                frmMessageShow f = new frmMessageShow();
+                f.MessageShow(Getstring("MessageHead"), Getstring("keywordText.SelectSampleMessage"));
                 return;
+            }
             OpenFileDialog dialog = new OpenFileDialog();
             dialog.InitialDirectory = System.Windows.Forms.Application.StartupPath;
             dialog.Filter = "xls" + Getstring("File") + "|*.xls";
