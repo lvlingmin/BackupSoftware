@@ -3253,6 +3253,8 @@ namespace BioBaseCLIA.Run
             }
             frmSampleLoad.DtItemInfoNoStat.Rows.Clear();
             #endregion
+            bool flag = false;
+            string ExpiredItems = null;
             foreach (var item in ItemNames)
             {
                 List<ReagentIniInfo> itemRiInfo = lisRIinfo.FindAll(ty => (ty.ItemName == item.Key));
@@ -3411,20 +3413,13 @@ namespace BioBaseCLIA.Run
                                         }
                                         else if (DateTime.Now.Date.AddDays(-Convert.ToInt32(dtItemInfo.Rows[0][3])).Date > Convert.ToDateTime(ActiveDate))
                                         {
-                                            DialogResult result = MessageBox.Show(getString("keywordText.Reagentbatch") + reBNum.Key + getString("keywordText.ProjectName") +
-                                            item.Key + getString("keywordText.SclingOver"), getString("btnWorkList.Text"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-	                                        if(result== DialogResult.No)
-	                                            return false;
-	                                        else
-	                                        {
-	                                            scalingInfo.ItemName = item.Key;
-	                                            scalingInfo.RegenBatch = reBNum.Key;
-	                                            scalingInfo.Num = "0";
-	                                            scalingInfo.TestConc = dtItemInfo.Rows[0][1].ToString();
-	                                            scalingInfo.testType = int.Parse(dtItemInfo.Rows[0][0].ToString());
-	                                            lisScalingInfo.Add(scalingInfo);
-	                                            scalingInfo = new ScalingInfo();
-	                                        }
+                                            if (!flag)
+                                            {
+                                                ExpiredItems += getString("keywordText.ProjectName") + item.Key + "  " + getString("keywordText.Reagentbatch") + reBNum.Key + "\n";
+                                                flag = true;
+                                            }
+                                            else
+                                                ExpiredItems += getString("keywordText.ProjectName") + item.Key + "  " + getString("keywordText.Reagentbatch") + reBNum.Key + "\n";
                                         }
                                         else
                                         {
@@ -3490,20 +3485,13 @@ namespace BioBaseCLIA.Run
                                     else if (DateTime.Now.Date.AddDays(-Convert.ToInt32(dtItemInfo.Rows[0][3])).Date > Convert.ToDateTime(ActiveDate))
                                     {
                                         //2018-07-31 zlx add
-                                        DialogResult result = MessageBox.Show(getString("keywordText.Reagentbatch") + reBNum.Key + getString("keywordText.ProjectName") +
-                                          item.Key + getString("keywordText.SclingOver"), getString("btnWorkList.Text"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                                        if (result == DialogResult.No)
-                                            return false;
-                                        else
+                                        if (!flag)
                                         {
-                                            scalingInfo.ItemName = item.Key;
-                                            scalingInfo.RegenBatch = reBNum.Key;
-                                            scalingInfo.Num = "0";
-                                            scalingInfo.TestConc = dtItemInfo.Rows[0][1].ToString();
-                                            scalingInfo.testType = int.Parse(dtItemInfo.Rows[0][0].ToString());
-                                            lisScalingInfo.Add(scalingInfo);
-                                            scalingInfo = new ScalingInfo();
+                                            ExpiredItems += getString("keywordText.ProjectName") + item.Key + "  " + getString("keywordText.Reagentbatch") + reBNum.Key + "\n";
+                                            flag = true;
                                         }
+                                        else
+                                            ExpiredItems += getString("keywordText.ProjectName") + item.Key + "  " + getString("keywordText.Reagentbatch") + reBNum.Key + "\n";
                                         //frmMsgShow.MessageShow(getString("btnWorkList.Text"), getString("keywordText.Reagentbatch") + reBNum.Key + getString("keywordText.ProjectName") + item.Key + getString("keywordText.SclingOver"));
                                         //return false;
                                     }
@@ -3661,6 +3649,12 @@ namespace BioBaseCLIA.Run
                     }
                 }
                 #endregion
+            }
+            if (flag)
+            {
+                DialogResult result = MessageBox.Show(ExpiredItems + getString("keywordText.SclingOver"), getString("btnWorkList.Text"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (result == DialogResult.No)
+                    return false;
             }
             #region 检测底物测数是否够本次实验使用
             string BarCode = OperateIniFile.ReadIniData("Substrate1", "BarCode", "", iniPathSubstrateTube);
