@@ -1480,4 +1480,7 @@
   <data name="uninstall" xml:space="preserve">
     <value>uninstall</value>
   </data>
+  <data name="keywordText.SelectSampleMessage" xml:space="preserve">
+    <value>Please select the sample information that needs to import data!</value>
+  </data>
 </root>
