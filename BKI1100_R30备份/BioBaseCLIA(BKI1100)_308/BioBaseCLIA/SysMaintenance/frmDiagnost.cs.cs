@@ -6477,6 +6477,7 @@ namespace BioBaseCLIA.SysMaintenance
                             {
                                 textSurplusNum.Text = surplusNum.ToString();
                             }));
+                            Thread.Sleep(5000); 
                         }
                         TubetempNum = 1;
                         //CurrentTubePos = CurrentTubePos - singleLooPNum < 0 ? CurrentTubePos - singleLooPNum + 352 : CurrentTubePos - singleLooPNum;
@@ -6633,6 +6634,7 @@ namespace BioBaseCLIA.SysMaintenance
                             {
                                 textSurplusNum.Text = surplusNum.ToString();
                             }));
+                            Thread.Sleep(5000);
                         }
                         TubetempNum = 1;
                         //CurrentTubePos = CurrentTubePos - singleLooPNum < 0 ? CurrentTubePos - singleLooPNum + 352 : CurrentTubePos - singleLooPNum;
@@ -6768,6 +6770,7 @@ namespace BioBaseCLIA.SysMaintenance
                         {
                             textSurplusNum.Text = surplusNum.ToString();
                         }));
+                        Thread.Sleep(5000);
                     }
                     #endregion
                 }
@@ -6872,6 +6875,7 @@ namespace BioBaseCLIA.SysMaintenance
                             }
                         }
                         TubetempNum++;
+                        Thread.Sleep(5000);
                     }
                     #endregion
                     for (int j = 0; j < SumNum; j++)
