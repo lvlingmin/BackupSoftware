@@ -3687,7 +3687,7 @@ namespace BioBaseCLIA.Run
                 if (Convert.ToDateTime(ValidDate1) < DateTime.Now.Date)
                     OverInfo = getString("keywordText.substrate");
                 LogFileAlarm.Instance.Write(DateTime.Now.ToString("HH-mm-ss") + " *** " + "警告" + " *** " + "未读" + " *** " + "底物1已经过期");
-                DialogResult r = MessageBox.Show("" + OverInfo + getString("keywordText.OvertimeInfo"), getString("tip"), MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
+                DialogResult r = MessageBox.Show("" + OverInfo + getString("keywordText.OvertimeInfo"), getString("keywordText.tip"), MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
                 if (DialogResult.OK != r)
                     return false;
             }
