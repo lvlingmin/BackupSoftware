@@ -98,7 +98,7 @@ namespace BioBaseCLIA.User
             //连接BaseInfo数据库
             DbHelperOleDb DB = new DbHelperOleDb(2);
             DataTable dtUser = bllUser.GetList("UserName='" + name + "'").Tables[0];
-           
+
             if (dtUser.Rows.Count < 1)
             {
                 frmMsgShow.MessageShow(Getstring("MessageboxTitle"), Getstring("UsernameErr"));
@@ -121,14 +121,14 @@ namespace BioBaseCLIA.User
                     //2018-08-04  zlx add
                     LoginGName = LoginUserName = cmbUserName.Text.Trim();
                     LoginUserType = dr[0]["RoleType"].ToString();
-                    LogFile.Instance.Write(DateTime.Now.ToString("HH:mm:ss") + " " + Getstring("User") + "  " + LoginUserName + " "+Getstring("Login")+" ");
+                    LogFile.Instance.Write(DateTime.Now.ToString("HH:mm:ss") + " " + Getstring("User") + "  " + LoginUserName + " " + Getstring("Login") + " ");
                 }
             }
             foreach (string usdName in lisUsedName)
             {
                 if (usdName.Trim() != cmbUserName.Text)
                 {
-                    OperateIniFile.WriteIniPara("UsedName", "UserName", cmbUserName.Text.Trim()+",");
+                    OperateIniFile.WriteIniPara("UsedName", "UserName", cmbUserName.Text.Trim() + ",");
                 }
             }
             //2018-08-04 zlx add
@@ -139,7 +139,6 @@ namespace BioBaseCLIA.User
             OperateIniFile.WriteIniPara("UsedName", "KeepPwd", KeepPwd);
             paProcess.Visible = true;
             new Thread(new ThreadStart(LoadProgram)).Start();
-            NetCom3.Instance.ReceiveHandel += new Action<string>(Darkroom);    //暗室自检
             btnLogin.Enabled = false;
             btnCancel.Enabled = false;
             txtUserPassword.Enabled = false;
@@ -186,8 +185,8 @@ namespace BioBaseCLIA.User
 
                     if (!NetCom3.isConnect)
                     {
-                        DialogResult r = 
-                            MessageBox.Show(Getstring("InitErr"), Getstring("MessageboxTitle"), 
+                        DialogResult r =
+                            MessageBox.Show(Getstring("InitErr"), Getstring("MessageboxTitle"),
                             MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
                         DialogResult = r;
                         goto complete;
@@ -196,7 +195,7 @@ namespace BioBaseCLIA.User
                 }
                 else
                 {
-                    DialogResult r = 
+                    DialogResult r =
                         MessageBox.Show(Getstring("ConnectErr"), Getstring("MessageboxTitle"),
                         MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
                     DialogResult = r;
@@ -248,11 +247,11 @@ namespace BioBaseCLIA.User
                 {
                     err.Append(Getstring("Incubationfailure"));
                 }
-                if (!string.IsNullOrEmpty(err.ToString())) 
+                if (!string.IsNullOrEmpty(err.ToString()))
                 {
                     Invoke(new Action(() =>
                     {
-                        MessageBox.Show(Getstring("InitExcetion") + err.ToString(),Getstring("MessageboxTitle"),
+                        MessageBox.Show(Getstring("InitExcetion") + err.ToString(), Getstring("MessageboxTitle"),
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }));
                     //管理员账号握手初始化失败也能进入软件
@@ -294,7 +293,7 @@ namespace BioBaseCLIA.User
             }
             Thread.Sleep(5000);
             DialogResult = DialogResult.OK;
-            complete:
+        complete:
             BeginInvoke(new Action(() =>
             {
                 Close();
@@ -377,7 +376,7 @@ namespace BioBaseCLIA.User
                 {
                     if (reagentIniInfo.ItemName.Trim() == "" || reagentIniInfo.BarCode.Trim() == "") continue;//add y 20180518
                     DB = new DbHelperOleDb(3);
-                    DbHelperOleDb.ExecuteSql(3,@"update tbReagent set leftoverTestR1 =" + reagentIniInfo.LeftReagent1 + ",leftoverTestR2 = " + reagentIniInfo.LeftReagent2 +
+                    DbHelperOleDb.ExecuteSql(3, @"update tbReagent set leftoverTestR1 =" + reagentIniInfo.LeftReagent1 + ",leftoverTestR2 = " + reagentIniInfo.LeftReagent2 +
                                               ",leftoverTestR3 = " + reagentIniInfo.LeftReagent3 + ",leftoverTestR4 = " + reagentIniInfo.LeftReagent4 + " where BarCode = '"
                                                   + reagentIniInfo.BarCode + "' and ReagentName = '" + reagentIniInfo.ItemName + "'");
                 }
@@ -390,7 +389,7 @@ namespace BioBaseCLIA.User
             {
                 if (sbNum1.Trim() == "")
                     sbNum1 = "0";//this block end
-                    DbHelperOleDb.ExecuteSql(3,@"update tbSubstrate set leftoverTest =" + sbNum1 + " where BarCode = '"+ sbCode1 + "'");//move y 20180511
+                DbHelperOleDb.ExecuteSql(3, @"update tbSubstrate set leftoverTest =" + sbNum1 + " where BarCode = '" + sbCode1 + "'");//move y 20180511
             }
             #endregion
 
@@ -414,14 +413,14 @@ namespace BioBaseCLIA.User
                 string[] ItemNames = dtSpInfoRun.Rows[i]["ItemName"].ToString().Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
                 for (int j = 0; j < ItemNames.Length; j++)
                 {
-                    object ob = DbHelperOleDb.GetSingle(0,@"select DiluteCount from tbProject where ShortName 
+                    object ob = DbHelperOleDb.GetSingle(0, @"select DiluteCount from tbProject where ShortName 
                                                                              = '" + ItemNames[j] + "'");
                     string DilutionTimes = ob == null ? "" : ob.ToString();
-                    ob = DbHelperOleDb.GetSingle(0,@"select DiluteName from tbProject where ShortName 
+                    ob = DbHelperOleDb.GetSingle(0, @"select DiluteName from tbProject where ShortName 
                                                                              = '" + ItemNames[j] + "'");
                     string DilutionName = ob == null ? "" : ob.ToString();
                     frmParent.dtSampleRunInfo.Rows.Add(dtSpInfoRun.Rows[i]["Position"].ToString(), dtSpInfoRun.Rows[i]["SampleNo"].ToString(), dtSpInfoRun.Rows[i]["SampleType"].ToString(), ItemNames[j],
-                        dtSpInfoRun.Rows[i]["Emergency"].ToString().Trim()=="1"?"是":"否", DilutionTimes, DilutionName);
+                        dtSpInfoRun.Rows[i]["Emergency"].ToString().Trim() == "1" ? "是" : "否", DilutionTimes, DilutionName);
                 }
             }
             DataView dv = frmParent.dtSampleRunInfo.DefaultView;
@@ -470,7 +469,7 @@ namespace BioBaseCLIA.User
 
         private void frmLogin_Load(object sender, EventArgs e)
         {
-            SetBackgroundimageAndLocation();           
+            SetBackgroundimageAndLocation();
             cmbUserName.Focus();
             KeepPwd = OperateIniFile.ReadInIPara("UsedName", "KeepPwd");//2018-08-04 zlx add
             //2018-08-04
@@ -478,11 +477,12 @@ namespace BioBaseCLIA.User
                 chkKeepPwd.Checked = true;
             else
                 chkKeepPwd.Checked = false;
-            NetCom3.Instance.ReceiveHandel+=new Action<string>(Instance_ReceiveHandel);
+            NetCom3.Instance.ReceiveHandel += new Action<string>(Instance_ReceiveHandel);
             new Thread(new ParameterizedThreadStart((obj) =>
-          {
-              bindUsedName();
-          })) { IsBackground = true }.Start();
+            {
+                bindUsedName();
+            }))
+            { IsBackground = true }.Start();
         }
         /// <summary>
         /// 绑定已使用过的用户名
@@ -501,22 +501,22 @@ namespace BioBaseCLIA.User
                     }
                 }
                 this.BeginInvoke(new Action(() => {
-                //自定义绑定数据源
-                this.cmbUserName.AutoCompleteSource = AutoCompleteSource.CustomSource;
-                //列表+自动填充
-                this.cmbUserName.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-                //绑定数据源
-                //this.cmbUserName.AutoCompleteCustomSource.AddRange(lisUsedName.ToArray());
-                //2018-08-04 zlx add
-                foreach (string un in username)
-                {
-                    if (un.Trim() != "")
+                    //自定义绑定数据源
+                    this.cmbUserName.AutoCompleteSource = AutoCompleteSource.CustomSource;
+                    //列表+自动填充
+                    this.cmbUserName.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+                    //绑定数据源
+                    //this.cmbUserName.AutoCompleteCustomSource.AddRange(lisUsedName.ToArray());
+                    //2018-08-04 zlx add
+                    foreach (string un in username)
                     {
-                        cmbUserName.Items.Add(un);
+                        if (un.Trim() != "")
+                        {
+                            cmbUserName.Items.Add(un);
+                        }
                     }
-                }
-                if (cmbUserName.Items.Count > 0)
-                    cmbUserName.SelectedIndex = 0;
+                    if (cmbUserName.Items.Count > 0)
+                        cmbUserName.SelectedIndex = 0;
                 }));
             }
         }
@@ -698,7 +698,7 @@ namespace BioBaseCLIA.User
                                             {
                                                 Process.Start(debugAppPath, strCommand);
                                                 DialogResult = DialogResult.Cancel;
-                                                BeginInvoke(new Action(()=>
+                                                BeginInvoke(new Action(() =>
                                                 {
                                                     Close();
                                                 }));
@@ -729,7 +729,7 @@ namespace BioBaseCLIA.User
                     }
                     break;
             }
-            hotKeyEnd:
+        hotKeyEnd:
             hotKeyIsRun = true;
             base.WndProc(ref m);
         }
@@ -770,46 +770,6 @@ namespace BioBaseCLIA.User
             index++;
         }
 
-        /// <summary>
-        /// 暗室开机自检
-        /// </summary>
-        void Darkroom(string order)
-        {
-            SetCultureInfo();
-            if (!order.Contains("EB 90 F1 02"))
-                return;
-            string[] dataRecive = order.Split(' ');
-            uint readData = uint.Parse(dataRecive[14] + dataRecive[15], System.Globalization.NumberStyles.AllowHexSpecifier);
-            if (dataRecive[4] == "FE")
-            {
-                LogFileAlarm.Instance.Write(DateTime.Now.ToString("HH-mm-ss") + " *** " + Getstring("Warning") + " *** " + Getstring("NotRead") + " *** " + Getstring("High") + readData);
-                //LogBtnColorChange(1);
-                new Thread(new ParameterizedThreadStart((obj) =>
-                {
-                    SetCultureInfo();
-                    frmMessageShow f = new frmMessageShow();
-                    f.MessageShow(Getstring("Tips"), Getstring("Hightips"));
-                }))
-                {
-                    IsBackground = true
-                }.Start();
-            }
-            else if (dataRecive[4] == "FD")
-            {
-                LogFileAlarm.Instance.Write(DateTime.Now.ToString("HH-mm-ss") + " *** " + Getstring("Warning") + " *** " + Getstring("NotRead") + " *** " + Getstring("Low") + readData);
-                //LogBtnColorChange(1);
-                new Thread(new ParameterizedThreadStart((obj) =>
-                {
-                    SetCultureInfo();
-                    frmMessageShow f = new frmMessageShow();
-                    f.MessageShow(Getstring("Tips"), Getstring("Lowtips"));
-                }))
-                {
-                    IsBackground = true
-                }.Start();
-            }
-        }
-
         #region 语言环境设置相关，比较粗糙后面整理一下
         ComponentResourceManager resources = new ComponentResourceManager(typeof(frmLogin));
         private void ApplyResource()
@@ -835,11 +795,11 @@ namespace BioBaseCLIA.User
             return "zh-CN";
         }
 
-        private string Getstring(string key) 
+        private string Getstring(string key)
         {
             ResourceManager resManagerA =
                     new ResourceManager("BioBaseCLIA.User.frmLogin", typeof(frmLogin).Assembly);
-            return  resManagerA.GetString(key); 
+            return resManagerA.GetString(key);
         }
 
         private void SetCultureInfo()
