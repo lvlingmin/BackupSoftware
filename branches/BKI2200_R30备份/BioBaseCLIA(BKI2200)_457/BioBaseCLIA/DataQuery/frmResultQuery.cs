@@ -443,7 +443,7 @@ namespace BioBaseCLIA.DataQuery
                     {
                         dgvSampleData.Rows[i].Selected = true;
                         dr = dtTestResult.NewRow();
-                        dr["ShortName"] = dtPro.Select("ShortName = '" + dgvSampleData.Rows[i].Cells["ItemName"].Value.ToString() + "'")[0]["FullName"].ToString();//lyq/*dgvSampleData.Rows[i].Cells["ItemName"].Value.ToString();*/
+                        dr["ShortName"] = dgvSampleData.Rows[i].Cells["ItemName"].Value.ToString();//dtPro.Select("ShortName = '" + dgvSampleData.Rows[i].Cells["ItemName"].Value.ToString() + "'")[0]["FullName"].ToString();//lyq/*dgvSampleData.Rows[i].Cells["ItemName"].Value.ToString();*/
                         dr["Concentration"] = dgvSampleData.Rows[i].Cells["Concentration"].Value.ToString();
                         dr["Result"] = dgvSampleData.Rows[i].Cells["Result"].Value.ToString();
                         dr["Range1"] = dgvSampleData.Rows[i].Cells["Range"].Value.ToString();
@@ -453,6 +453,8 @@ namespace BioBaseCLIA.DataQuery
 
                         string printIndex = OperateIniFile.ReadIniData("RpSort", dgvSampleData.Rows[i].Cells["ItemName"].Value.ToString(), "",
                              Application.StartupPath + "//ReportSort.ini");
+                        if (printIndex == "")
+                            printIndex = "999";
                         dr["printIndex"] = printIndex;
                         dtTestResult.Rows.Add(dr);
                     }
