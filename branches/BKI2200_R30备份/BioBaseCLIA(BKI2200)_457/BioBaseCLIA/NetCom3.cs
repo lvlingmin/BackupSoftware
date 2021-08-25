@@ -581,11 +581,16 @@ namespace BioBaseCLIA
                 byte[] byteData = cmd.HexStringToByteArray(order);
                 try
                 {
-                    while (!totalOrderFlag)
+                    while (!totalOrderFlag&& orderType == 5)
                     {
                         Delay(100);
                     }
-                    totalOrderFlag = false;
+
+                    if (orderType == 5) 
+                    {
+                        totalOrderFlag = false;
+                    }
+
                     //DiagnostDone.Reset();
                     //add y 20180927 定时接收不到返回的接受指令进行指令重发⬇
                     if (!order.Contains("EB 90"))//2018-01-11 zlx add
@@ -631,56 +636,56 @@ namespace BioBaseCLIA
                     }
                     if (order.Contains("EB 90 31") || order.Contains("eb 90 31") || order.Contains("Eb 90 31"))
                     {
-                        waitAndAgainSend = new Thread(new ParameterizedThreadStart((object obj) =>
-                        {
-                            string waitOrder = obj as string;
-                            if (waitOrder == null || waitOrder == string.Empty) return;
-                            for (int i = 0; i < 61; i++)
-                            {
-                                Thread.Sleep(100);
-                            }
-                            if (!totalOrderFlag)
-                            {
-                                switch (orderType)
-                                {
-                                    case 0:
-                                        if (AdderrorFlag == (int)ErrorState.ReadySend)
-                                        {
-                                            AdderrorFlag = (int)ErrorState.Sendfailure;
-                                            SpSendFlag = true;
-                                            SpReciveFlag = true;
-                                            totalOrderFlag = true;
-                                        }
-                                        break ;
-                                    case 1:
-                                        if (MoverrorFlag == (int)ErrorState.ReadySend)
-                                        {
-                                            MoverrorFlag = (int)ErrorState.Sendfailure;
-                                            MoveSendFlag = true;
-                                            MoveReciveFlag = true;
-                                            totalOrderFlag = true;
-                                        }
-                                        break;
-                                    case 2:
-                                        if (WasherrorFlag == (int)ErrorState.ReadySend)
-                                        {
-                                            WasherrorFlag = (int)ErrorState.Sendfailure;
-                                            WashSendFlag = true;
-                                            WashReciveFlag = true;
-                                            totalOrderFlag = true;
-                                        }
-                                        break;
-                                }
-                            }
-                            //if (!totalOrderFlag)
-                            //{
-                            //    byte[] byteData2 = cmd.HexStringToByteArray(waitOrder);
-                            //    client.BeginSend(byteData2, 0, byteData2.Length, 0, new AsyncCallback(OtherSendCallback), client);
-                            //    LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order));
-                            //}
-                        }));
-                        waitAndAgainSend.IsBackground = true;
-                        waitAndAgainSend.Start(order);
+                        //waitAndAgainSend = new Thread(new ParameterizedThreadStart((object obj) =>
+                        //{
+                        //    string waitOrder = obj as string;
+                        //    if (waitOrder == null || waitOrder == string.Empty) return;
+                        //    for (int i = 0; i < 61; i++)
+                        //    {
+                        //        Thread.Sleep(100);
+                        //    }
+                        //    if (!totalOrderFlag)
+                        //    {
+                        //        switch (orderType)
+                        //        {
+                        //            case 0:
+                        //                if (AdderrorFlag == (int)ErrorState.ReadySend)
+                        //                {
+                        //                    AdderrorFlag = (int)ErrorState.Sendfailure;
+                        //                    SpSendFlag = true;
+                        //                    SpReciveFlag = true;
+                        //                    totalOrderFlag = true;
+                        //                }
+                        //                break ;
+                        //            case 1:
+                        //                if (MoverrorFlag == (int)ErrorState.ReadySend)
+                        //                {
+                        //                    MoverrorFlag = (int)ErrorState.Sendfailure;
+                        //                    MoveSendFlag = true;
+                        //                    MoveReciveFlag = true;
+                        //                    totalOrderFlag = true;
+                        //                }
+                        //                break;
+                        //            case 2:
+                        //                if (WasherrorFlag == (int)ErrorState.ReadySend)
+                        //                {
+                        //                    WasherrorFlag = (int)ErrorState.Sendfailure;
+                        //                    WashSendFlag = true;
+                        //                    WashReciveFlag = true;
+                        //                    totalOrderFlag = true;
+                        //                }
+                        //                break;
+                        //        }
+                        //    }
+                        //    //if (!totalOrderFlag)
+                        //    //{
+                        //    //    byte[] byteData2 = cmd.HexStringToByteArray(waitOrder);
+                        //    //    client.BeginSend(byteData2, 0, byteData2.Length, 0, new AsyncCallback(OtherSendCallback), client);
+                        //    //    LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order));
+                        //    //}
+                        //}));
+                        //waitAndAgainSend.IsBackground = true;
+                        //waitAndAgainSend.Start(order);
                     }
                     //⬆
                     LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order));
@@ -689,25 +694,25 @@ namespace BioBaseCLIA
                         case 0:
                             NetCom3.Instance.LiquidLevelDetectionFlag = (int)LiquidLevelDetectionAlarm.Height;//运行前标准置高
                             client.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(AddArmSendCallback), client);
-                            //LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order));
+                            LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order+ "BeginSend"));
                             break;
                         case 1:
                             client.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(MoveSendCallback), client);
-                            //LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order));
+                            LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order + "BeginSend"));
                             break;
                         case 2:
                             client.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(WashSendCallback), client);
-                            //LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order));
+                            LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order + "BeginSend"));
                             break;
                         case 5:
                             DiagnostDone.Reset();//modify 20181009 y
                             client.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(DiagnostSendCallback), client);
-                            //LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order));
+                            LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order + "BeginSend"));
                             break;
                         default:
                             DiagnostDone.Reset();
                             client.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(OtherSendCallback), client);
-                            //LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order));
+                            LogFile.Instance.Write(string.Format("{0}->:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), order + "BeginSend"));
                             break;
                     }
                     //client.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), client);
@@ -946,6 +951,7 @@ namespace BioBaseCLIA
         {
             try
             {
+                LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "启动调试接受开始"));
                 // 从状态对象检索套接字。    
                 Socket client = (Socket)ar.AsyncState;
                 // 完成向下位机发送数据     
@@ -962,7 +968,9 @@ namespace BioBaseCLIA
                     StateObject state = new StateObject();
                     state.workSocket = client;
                     // 开始从服务器接收数据
+                    Thread.Sleep(5000);
                     client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+                    LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "启动调试接受"));
                     if (!DiagnostDone.WaitOne(60000, false))
                     {
                         LogFile.Instance.Write(DateTime.Now.ToString("hh:mm:ss:fff") + "DiagnostSendCallback调试指令接收出现异常！");
@@ -1230,8 +1238,13 @@ namespace BioBaseCLIA
 
         private void ReceiveCallback(IAsyncResult ar)
         {
+            LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "ReceiveCallback"));
+
             lock (locker)
             {
+
+                LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "进入ReceiveCallback"));
+
                 if (Thread.CurrentThread.CurrentCulture != Language.AppCultureInfo)//lyq
                 {
                     Thread.CurrentThread.CurrentCulture = Language.AppCultureInfo;
@@ -1261,9 +1274,9 @@ namespace BioBaseCLIA
                     int bytesRead=0;
                     try
                     {
-                        //保证数据接收完成 Jun add
-                        //Thread.Sleep(800);
+                        //保证数据接收完成 
                         bytesRead = client.EndReceive(ar);
+                        LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "收到数据长度:" + bytesRead));
                     }
                     catch (Exception e)
                     {
@@ -1519,14 +1532,14 @@ namespace BioBaseCLIA
                                     if (orderTemp == "11 AF") WhereToReceive = 2;
                                 }
                                 //下位机收到上位机指令
-                                else if (orderTemp == "00 00")//y modify 20180802
-                                {
-                                    if (waitAndAgainSend is Thread && waitAndAgainSend != null)
-                                    {
-                                        totalOrderFlag = true;
-                                        waitAndAgainSend.Abort();
-                                    }
-                                }
+                                //else if (orderTemp == "00 00")//y modify 20180802
+                                //{
+                                //    if (waitAndAgainSend is Thread && waitAndAgainSend != null)
+                                //    {
+                                //        totalOrderFlag = true;
+                                //        waitAndAgainSend.Abort();
+                                //    }
+                                //}
                                 
                                 //移管手模块动作执行完毕
                                 else if (orderTemp == "31 A1")//20180717 y 增加了撞针等出错处理
@@ -1643,18 +1656,18 @@ namespace BioBaseCLIA
                                     thDataHandle.Start(tempResponse);
                                 }
                                 //response = string.Empty;
-                                if (orderTemp == "00 00")
-                                {
-                                    state.sb.Remove(0, state.sb.Length);
-                                    state.buffer = new byte[StateObject.BufferSize];
-                                    if (client.Connected)
-                                    {
-                                        // 获取其余的数据  
-                                        client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
-                                        //Thread.Sleep(300);
-                                    }
-                                    LogFile.Instance.Write(DateTime.Now + ":0");
-                                }
+                                //if (orderTemp == "00 00")
+                                //{
+                                //    state.sb.Remove(0, state.sb.Length);
+                                //    state.buffer = new byte[StateObject.BufferSize];
+                                //    if (client.Connected)
+                                //    {
+                                //        // 获取其余的数据  
+                                //        client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+                                //        //Thread.Sleep(300);
+                                //    }
+                                //    LogFile.Instance.Write(DateTime.Now + ":0");
+                                //}
                             }
                         }
                     }
@@ -1839,9 +1852,9 @@ namespace BioBaseCLIA
     // State object for receiving data from remote device. 
     /// <summary>
     /// 信息传输错误状态
-    /// 0-准备发送,1-成功 2-发送失败 3-接收失败 4-抓管撞管（撞针） 5-抓空 6-混匀异常 7-放管撞管 8-理杯机缺管 9-发送超时
+    /// 0-准备发送,1-成功 2-发送失败 3-接收失败 4-抓管撞管（撞针） 5-抓空 6-混匀异常 7-放管撞管 8-理杯机缺管 9-发送超时  10-理杯机卡管
     /// </summary>
-    public enum ErrorState { ReadySend = 0, Success = 1, Sendfailure = 2, Recivefailure = 3, IsKnocked = 4, IsNull = 5, BlendUnusua = 6, putKnocked=7,LackTube=8,OverTime = 9 }
+    public enum ErrorState { ReadySend = 0, Success = 1, Sendfailure = 2, Recivefailure = 3, IsKnocked = 4, IsNull = 5, BlendUnusua = 6, putKnocked=7,LackTube=8,OverTime = 9,StuckTube=10 }
     /// <summary>
     /// 液位检测状态
     /// >100  Height
