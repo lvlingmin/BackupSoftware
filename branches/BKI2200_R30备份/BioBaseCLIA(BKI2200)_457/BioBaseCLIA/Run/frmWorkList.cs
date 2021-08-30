@@ -466,6 +466,10 @@ namespace BioBaseCLIA.Run
         /// 液位检测报警事件
         /// </summary>
         public static event Action<string, int> LiquidLevelDetectionEvent;
+        /// <summary>
+        /// 发光值校准系数
+        /// </summary>
+        public static string Coefficient = OperateIniFile.ReadInIPara("ResultCoefficient", "Coefficient");
 
         public frmWorkList()
         {
@@ -9772,25 +9776,44 @@ namespace BioBaseCLIA.Run
         {
             if (lisTiEnd.Count == BToListTi.Count)
                 frmTestResult.BRun = false;
-            LogFile.Instance.Write("*********  发光值  ： " + testResult.PMT + "  **********");
+            var testresult = new TestResult();
+            testresult.PMT = testResult.PMT;
+            testresult.SampleID = testResult.SampleID;
+            testresult.TestID = testResult.TestID;
+            testresult.SampleNo = testResult.SampleNo;
+            testresult.SamplePos = testResult.SamplePos;
+            testresult.SampleType = testResult.SampleType;
+            testresult.ItemName = testResult.ItemName;
+            testresult.concentration = testResult.concentration;
+            testresult.Result = testResult.Result;
+            testresult.sco = testResult.sco;
+            testresult.Range1 = testResult.Range1;
+            testresult.Range2 = testResult.Range2;
+            testresult.Status = testResult.Status;
+            testresult.ReagentBeach = testResult.ReagentBeach;
+            testresult.SubstratePipe = testResult.SubstratePipe;
+            testresult.Unit = testResult.Unit;
+            testresult.ResultDatetime = testResult.ResultDatetime;
+            LogFile.Instance.Write("*********  发光值  ： " + testresult.PMT + "  **********");
 
             //调度到主线程添加的目的是为了保证结果列表添加刷新，但是有可能丢失数据
             this.Invoke(new Action(() =>
             {
-                BTestResult.Add(testResult);
-                TemporaryTestResult.Add(testResult);
+                BTestResult.Add(testresult);
+                TemporaryTestResult.Add(testresult);
             }));
 
-            if (testResult.SampleType.Contains(getString("keywordText.Standard")))
+            if (testresult.SampleType.Contains(getString("keywordText.Standard")))
             {
-                GC.KeepAlive(testResult);//防止被回收               
-                List<TestItem> BToList = BToListTi.FindAll(tx => (tx.ItemName == testResult.ItemName && tx.SampleType.Contains(getString("keywordText.Standard")) && tx.RegentBatch == dgvWorkListData.Rows[testResult.TestID - 1].Cells["RegentBatch"].Value.ToString()));
-                List<TestItem> ENDList = lisTiEnd.FindAll(tx => (tx.ItemName == testResult.ItemName && tx.SampleType.Contains(getString("keywordText.Standard"))));
+                GC.KeepAlive(testresult);//防止被回收               
+                List<TestItem> BToList = BToListTi.FindAll(tx => (tx.ItemName == testresult.ItemName && tx.SampleType.Contains(getString("keywordText.Standard")) && tx.RegentBatch == dgvWorkListData.Rows[testresult.TestID - 1].Cells["RegentBatch"].Value.ToString()));
+                List<TestItem> ENDList = lisTiEnd.FindAll(tx => (tx.ItemName == testresult.ItemName && tx.SampleType.Contains(getString("keywordText.Standard")) && tx.RegentBatch == dgvWorkListData.Rows[testresult.TestID - 1].Cells["RegentBatch"].Value.ToString()));
                 if (BToList.Count == ENDList.Count)
                 {
                     //List<TestResult> ScalingResult = new List<TestResult>(BTestResult).FindAll(tx => (tx.ItemName == testResult.ItemName && testResult.SampleType.Contains(getString("keywordText.Standard"))));
                     //frmTestResult f = new frmTestResult();
-                    List<TestResult> ScalingResult = new List<TestResult>(TemporaryTestResult).FindAll(tx => (tx.ItemName == testResult.ItemName && testResult.SampleType.Contains(getString("keywordText.Standard"))));
+                    List<TestResult> ScalingResult = new List<TestResult>(TemporaryTestResult).FindAll(tx => (tx.ItemName == testresult.ItemName &&
+                    testresult.SampleType.Contains(getString("keywordText.Standard"))) && testresult.ReagentBeach == testresult.ReagentBeach);
 
                     Invoke(new Action(() =>
                     {
@@ -9813,7 +9836,7 @@ namespace BioBaseCLIA.Run
                 }
             }
             else
-                SaveResultDate(testResult);
+                SaveResultDate(testresult);
             SendLisData(lis1, lis2);
             testResult = new TestResult();
         }
@@ -9948,6 +9971,7 @@ namespace BioBaseCLIA.Run
                 modelQCResult.ConcSPEC = "";
                 modelQCResult.ItemName = result.ItemName;
                 modelQCResult.PMTCounter = result.PMT;
+                modelQCResult.PMTCounter = (int)((double)result.PMT * double.Parse(Coefficient));
                 modelQCResult.QCID = int.Parse(dtQCInfo.Rows[0][0].ToString());
                 modelQCResult.Source = 0;
                 modelQCResult.TestDate = DateTime.Now;
@@ -9975,6 +9999,7 @@ namespace BioBaseCLIA.Run
                 modelAssayResult.DiluteCount = 0;
                 modelAssayResult.ItemName = result.ItemName;
                 modelAssayResult.PMTCounter = result.PMT;
+                modelAssayResult.PMTCounter = (int)((double)result.PMT * double.Parse(Coefficient));
                 modelAssayResult.Range = result.Range1 + " " + result.Range2;
                 modelAssayResult.Result = result.Result;
                 modelAssayResult.Specification = "";
