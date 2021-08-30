@@ -968,9 +968,11 @@ namespace BioBaseCLIA
                     StateObject state = new StateObject();
                     state.workSocket = client;
                     // 开始从服务器接收数据
-                    Thread.Sleep(5000);
+                    //Thread.Sleep(5000);
+                    //client.BeginReceive(state.buffer, 0, 16, 0, new AsyncCallback(ReceiveCallback), state);
                     client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
-                    LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "启动调试接受"));
+                    LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "启动调试接受,state:"
+                        + state));
                     if (!DiagnostDone.WaitOne(60000, false))
                     {
                         LogFile.Instance.Write(DateTime.Now.ToString("hh:mm:ss:fff") + "DiagnostSendCallback调试指令接收出现异常！");
@@ -979,8 +981,8 @@ namespace BioBaseCLIA
                         frmMessageShow frmMS = new frmMessageShow();
                         frmMS.MessageShow("",Res.communicationfail);
                         frmMS.Dispose();
-						if(EventStop!=null)
-                            EventStop.Invoke();
+						//if(EventStop!=null)
+      //                      EventStop.Invoke();
                     }
                 }
                 catch (Exception ex)
@@ -1242,23 +1244,22 @@ namespace BioBaseCLIA
 
             lock (locker)
             {
+                LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "进入ReceiveCallback，ar：" + ar+ ";Thread:"+ Thread.CurrentThread.Name));
 
-                LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "进入ReceiveCallback"));
-
-                if (Thread.CurrentThread.CurrentCulture != Language.AppCultureInfo)//lyq
-                {
-                    Thread.CurrentThread.CurrentCulture = Language.AppCultureInfo;
-                    Thread.CurrentThread.CurrentUICulture = Language.AppCultureInfo;
-                }
-                if (!isConnect)
-                {
-                    //dw2018.12.24
-                    MessageBox.Show("ReceiveCallback isConnect "+Res.Disconnect);
-                    LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "isConnect退出"));
-                    //dw2018.12.24
-                    return;
-                }
-                StateObject state = (StateObject)ar.AsyncState;
+	            if (Thread.CurrentThread.CurrentCulture != Language.AppCultureInfo)//lyq
+	            {
+	                Thread.CurrentThread.CurrentCulture = Language.AppCultureInfo;
+	                Thread.CurrentThread.CurrentUICulture = Language.AppCultureInfo;
+	            }
+	            if (!isConnect)
+	            {
+	                //dw2018.12.24
+	                MessageBox.Show("ReceiveCallback isConnect "+Res.Disconnect);
+	                LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "isConnect退出"));
+	                //dw2018.12.24
+	                return;
+	            }
+	            StateObject state = (StateObject)ar.AsyncState;
                 try
                 {
                     if ((state.workSocket == null) || (!state.workSocket.Connected))
@@ -1269,407 +1270,409 @@ namespace BioBaseCLIA
                         //dw2018.12.24
                         return;
                     }
+                    int bytesRead = 0;
                     Socket client = state.workSocket;
-                    // 读取下位机返回的字节数 
-                    int bytesRead=0;
-                    try
+                    if (state.buffer[0] == 0 && state.buffer[1] == 0)
                     {
-                        //保证数据接收完成 
-                        bytesRead = client.EndReceive(ar);
-                        LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "收到数据长度:" + bytesRead));
+                        LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "异常返回1次"));
+                        client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
                     }
-                    catch (Exception e)
+                   else
                     {
-                        LogFile.Instance.Write(DateTime.Now + "client.EndReceive接收数据异常:" + e.Message);
-                        writeLog(e);
+                        // 读取下位机返回的字节数 
+                        try
+                        {
+                            //保证数据接收完成 
+                            bytesRead = client.EndReceive(ar);
+                            LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "收到数据长度:" + bytesRead));
+                        }
+                        catch (Exception e)
+                        {
+                            LogFile.Instance.Write(DateTime.Now + "client.EndReceive接收数据异常:" + e.Message);
+                            writeLog(e);
+                        }
                     }
-                    if ( bytesRead> 0)
+                    if (bytesRead > 0)
                     {
                         //2018-07-20 zlx add 追踪异常
-                        try
-                        {
-                            Array.Resize(ref state.buffer, bytesRead);
-                        }
-                        catch (Exception e)
-                        {
-                            writeLog(e);
-                            //MessageBox.Show("代码Array.Resize出现异常："+e.Message);
-                        }
-                        try
-                        {
-                            state.sb.Append(cmd.ByteArrayToHexString(state.buffer));
-                        }
-                        catch (Exception e)
-                        {
-                            //MessageBox.Show("代码 state.sb.Append出现异常：" + e.Message);
-                            writeLog(e);
-                        }
-                        response = response + state.sb;
-                        LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), state.sb.ToString()));
-                        //2018-10-11 zlx mod
-                        ReciveData = new string[state.sb.Length / 48];
-                        //for (int i = 0; i < state.sb.Length / 48; i++)
+                        //new Thread(new ParameterizedThreadStart((object obj) =>
                         //{
-                        //    ReciveData[i] = response.Substring(i * 48, 48);
-                        //}
-                        if (response.Contains("EB 90 CA"))
-                        {
-                            if (response.Contains("EB 90 CA A1 00 00 00") || response.Contains("EB 90 CA A2 00 00 00"))
+                            try
                             {
-                                ReciveData = new string[state.sb.Length / 48];
-                                for (int i = 0; i < state.sb.Length / 48; i++)
-                                {
-                                    ReciveData[i] = response.Substring(i * 48, 48);
-                                }
+                                Array.Resize(ref state.buffer, bytesRead);
                             }
-                            else if (response.Contains("EB 90 CA F1 FF"))
+                            catch (Exception e)
                             {
-                                ReciveData = new string[state.sb.Length / 48];
-                                for (int i = 0; i < state.sb.Length / 48; i++)
+                                writeLog(e);
+                                //MessageBox.Show("代码Array.Resize出现异常："+e.Message);
+                            }
+                            try
+                            {
+                                state.sb.Append(cmd.ByteArrayToHexString(state.buffer));
+                            }
+                            catch (Exception e)
+                            {
+                                //MessageBox.Show("代码 state.sb.Append出现异常：" + e.Message);
+                                writeLog(e);
+                            }
+                            response = response + state.sb;
+                            LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), state.sb.ToString()));
+                            //2018-10-11 zlx mod
+                            ReciveData = new string[state.sb.Length / 48];
+                            //for (int i = 0; i < state.sb.Length / 48; i++)
+                            //{
+                            //    ReciveData[i] = response.Substring(i * 48, 48);
+                            //}
+
+                            if (response.Contains("EB 90 CA"))
+                            {
+                                if (response.Contains("EB 90 CA A1 00 00 00") || response.Contains("EB 90 CA A2 00 00 00"))
                                 {
-                                    ReciveData[i] = response.Substring(i * 48, 48);
+                                    ReciveData = new string[state.sb.Length / 48];
+                                    for (int i = 0; i < state.sb.Length / 48; i++)
+                                    {
+                                        ReciveData[i] = response.Substring(i * 48, 48);
+                                    }
+                                }
+                                else if (response.Contains("EB 90 CA F1 FF"))
+                                {
+                                    ReciveData = new string[state.sb.Length / 48];
+                                    for (int i = 0; i < state.sb.Length / 48; i++)
+                                    {
+                                        ReciveData[i] = response.Substring(i * 48, 48);
+                                    }
+                                }
+                                else
+                                {
+                                    int len = Convert.ToInt32(response.Substring(response.IndexOf("EB 90 CA"), 14).Substring(12, 2), 16);
+                                    int longLength = Convert.ToInt32(response.Substring(response.IndexOf("EB 90 CA"), 17).Substring(12, 5).Replace(" ", ""), 16);
+                                    if (len < 11)
+                                        len = 11;
+                                    len = (len + 5) * 3;
+                                    if (longLength > 100 && longLength < 1000)
+                                    {
+                                        len = longLength;
+                                        len = (len + 6) * 3;
+                                    }
+
+                                    ReciveData = new string[state.sb.Length / (len - 1)];
+                                    //ReciveData[0] = response.Substring(0, len);
+                                    for (int i = 0; i < state.sb.Length / (len - 1); i++)
+                                    {
+                                        ReciveData[i] = response.Substring(i * len, len);
+                                    }
+                                    //MessageBox.Show("state.sb.Length:" + state.sb.Length + "----len:" + len + "\nReciveData[0]:" + ReciveData[0] + "\nReciveData[1]" + ReciveData[1]);
                                 }
                             }
                             else
                             {
-                                int len = Convert.ToInt32(response.Substring(response.IndexOf("EB 90 CA"), 14).Substring(12, 2), 16);
-                                int longLength = Convert.ToInt32(response.Substring(response.IndexOf("EB 90 CA"), 17).Substring(12, 5).Replace(" ", ""), 16);                                
-                                if (len < 11)
-                                    len = 11;
-                                len = (len + 5) * 3;
-                                if (longLength > 100 && longLength < 1000)
+                                ReciveData = new string[state.sb.Length / 48];
+                                for (int i = 0; i < state.sb.Length / 48; i++)
                                 {
-                                    len = longLength;
-                                    len = (len + 6) * 3;
+                                    ReciveData[i] = response.Substring(i * 48, 48);
                                 }
-
-                                ReciveData = new string[state.sb.Length / (len - 1)];
-                                //ReciveData[0] = response.Substring(0, len);
-                                for (int i = 0; i < state.sb.Length / (len - 1); i++)
-                                {
-                                    ReciveData[i] = response.Substring(i * len, len);
-                                }
-                                //MessageBox.Show("state.sb.Length:" + state.sb.Length + "----len:" + len + "\nReciveData[0]:" + ReciveData[0] + "\nReciveData[1]" + ReciveData[1]);
                             }
-                        }
-                        else
-                        {
-                            ReciveData = new string[state.sb.Length / 48];
-                            for (int i = 0; i < state.sb.Length / 48; i++)
+                            response = string.Empty;
+                            foreach (string tempResponse in ReciveData)
                             {
-                                ReciveData[i] = response.Substring(i * 48, 48);
-                            }
-                        }
-                        response = string.Empty;
-                        foreach (string tempResponse in ReciveData)
-                        {
-                            byte WhereToReceive = 1;
+                                byte WhereToReceive = 1;
 
-                            if (tempResponse.ToString().IndexOf("EB 90") > -1)
-                            {
-                                string orderTemp = tempResponse.Substring(tempResponse.ToString().IndexOf("EB 90") + 6, 5);     //"xx xx"
-                                string orderTemp2 = tempResponse.Substring(tempResponse.ToString().IndexOf("EB 90") + 6, 4); //"XX X"
-                                string orderTemp3 = tempResponse.Substring(tempResponse.ToString().IndexOf("EB 90") + 6, 8); //"XX XX XX"
-                                if (orderTemp.Substring(0, 2) == "CA" || orderTemp == "CA F1" || orderTemp == "11 FF" || orderTemp == "11 AF" || orderTemp == "01 A0" || orderTemp == "11 A0" //"CA F1"射频读卡器初始化返回//"11 FF"版本号返回指令//仪器调教指令处理//仪器调试收到查询温度
-                                    || orderTemp == "A1 03" || orderTemp == "F1 01" || orderTemp == "F1 02" || orderTemp == "F1 03")//心跳包上下位机握手动作完毕//仪器初始化完毕   y modify 20180802  zlx mod 2018-08-16
+                                if (tempResponse.ToString().IndexOf("EB 90") > -1)
                                 {
-                                    if (orderTemp == "01 A0") 
+                                    string orderTemp = tempResponse.Substring(tempResponse.ToString().IndexOf("EB 90") + 6, 5);     //"xx xx"
+                                    string orderTemp2 = tempResponse.Substring(tempResponse.ToString().IndexOf("EB 90") + 6, 4); //"XX X"
+                                    string orderTemp3 = tempResponse.Substring(tempResponse.ToString().IndexOf("EB 90") + 6, 8); //"XX XX XX"
+                                    if (orderTemp.Substring(0, 2) == "CA" || orderTemp == "CA F1" || orderTemp == "11 FF" || orderTemp == "11 AF" || orderTemp == "01 A0" || orderTemp == "11 A0" //"CA F1"射频读卡器初始化返回//"11 FF"版本号返回指令//仪器调教指令处理//仪器调试收到查询温度
+                                        || orderTemp == "A1 03" || orderTemp == "F1 01" || orderTemp == "F1 02" || orderTemp == "F1 03")//心跳包上下位机握手动作完毕//仪器初始化完毕   y modify 20180802  zlx mod 2018-08-16
                                     {
-                                        HandleLocationData(tempResponse);
-                                    }
-
-                                    //dw 2018.12.18
-                                    #region 初始化检测模块光电信号开关
-                                    if (orderTemp == "F1 02")
-                                    {
-                                        int tempInt;
-                                        //发送的指令EB 90 F1 02，下位机返回的指令中是EB 90 F1 02 FF FF FF FF，需要进行修改具体每一位
-                                        //待修改-现在下位机初始化返回的数据还是EB 90 F1 02 FF打头，在下位机初始化返回数据修改后也就是返回数据以EB 90 F1 02 00打头，就可以进行模块光电信号开关的检测
-                                        //此部分为光电信号的检测，把所有检测到未开的开关输出到一个弹框内
-                                        if (tempResponse.Contains("EB 90 F1 02 FF"))
+                                        if (orderTemp == "01 A0")
                                         {
-                                            tempInt = tempResponse.IndexOf("EB 90 F1 02 FF ");
+                                            HandleLocationData(tempResponse);
+                                        }
+
+                                        //dw 2018.12.18
+                                        #region 初始化检测模块光电信号开关
+                                        if (orderTemp == "F1 02")
+                                        {
+                                            int tempInt;
+                                            //发送的指令EB 90 F1 02，下位机返回的指令中是EB 90 F1 02 FF FF FF FF，需要进行修改具体每一位
+                                            //待修改-现在下位机初始化返回的数据还是EB 90 F1 02 FF打头，在下位机初始化返回数据修改后也就是返回数据以EB 90 F1 02 00打头，就可以进行模块光电信号开关的检测
+                                            //此部分为光电信号的检测，把所有检测到未开的开关输出到一个弹框内
+                                            if (tempResponse.Contains("EB 90 F1 02 FF"))
+                                            {
+                                                tempInt = tempResponse.IndexOf("EB 90 F1 02 FF ");
+                                            }
+                                            else
+                                            {
+                                                tempInt = tempResponse.IndexOf("EB 90 F1 02 ");
+                                            }
+                                            //int tempInt = tempResponse.IndexOf("EB 90 F1 02 00 ");
+                                            //初始化检测II：加样模块光电信号
+                                            string tempII = tempResponse.Substring(tempInt + 15, 2);
+                                            //判断II位为1F
+                                            frmMessageShow frmMS;
+                                            ErrorMessage = null;
+                                            if (tempII != "1F")
+                                            {
+
+                                                Byte bit = Convert.ToByte(tempII, 16);
+                                                tempII = Convert.ToString(bit, 2);
+                                                while (tempII.Length < 8)
+                                                {
+                                                    tempII = "0" + tempII;
+                                                }
+                                                if (tempII[7] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Sampleabnormal + "\n";
+                                                }
+                                                if (tempII[6] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Reagentabnormal + "\n";
+                                                }
+                                                if (tempII[5] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Verticalanomal + "\n";
+                                                }
+                                                if (tempII[4] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Rotationabnormal + "\n";
+                                                }
+                                                if (tempII[3] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Plungerabnormal + "\n";
+                                                }
+                                            }
+
+                                            //初始化检测JJ：抓手模块光电信号
+                                            string tempJJ = tempResponse.Substring(tempInt + 18, 2);
+                                            //判断JJ位为FF
+                                            if (tempJJ != "3F")
+                                            {
+                                                Byte bit = Convert.ToByte(tempJJ, 16);
+                                                tempJJ = Convert.ToString(bit, 2);
+                                                while (tempJJ.Length < 8)
+                                                {
+                                                    tempJJ = "0" + tempJJ;
+                                                }
+                                                if (tempJJ[7] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Cupabnormal + "\n";
+                                                }
+                                                if (tempJJ[6] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Temporaryabnormal + "\n";
+                                                }
+                                                if (tempJJ[5] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Verticalphotoelectricabnormal + "\n";
+                                                }
+                                                if (tempJJ[4] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Rotatingphotoelectricabnormal + "\n";
+                                                }
+                                                if (tempJJ[3] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Gripperabnormal + "\n";
+                                                }
+                                                if (tempJJ[2] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Emptyabnormal + "\n";
+                                                }
+
+                                            }
+                                            //初始化检测KK：清洗模块光电信号
+                                            string tempKK = tempResponse.Substring(tempInt + 21, 2);
+                                            if (tempKK != "F")
+                                            {
+                                                Byte bit = Convert.ToByte(tempKK, 16);
+                                                tempKK = Convert.ToString(bit, 2);
+                                                while (tempKK.Length < 8)
+                                                {
+                                                    tempKK = "0" + tempKK;
+                                                }
+
+                                                if (tempKK[7] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Cleanabnormal + "\n";
+                                                }
+                                                if (tempKK[6] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Pressureabnormal + "\n";
+                                                }
+                                                if (tempKK[5] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Cleanverticalabnormal + "\n";
+                                                }
+                                                if (tempKK[4] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Measureabnormal + "\n";
+                                                }
+                                            }
+
+                                            //初始化检测KK：温育盘模块光电信号
+                                            string tempMM = tempResponse.Substring(tempInt + 24, 2);
+                                            if (tempMM != "7")
+                                            {
+                                                Byte bit = Convert.ToByte(tempMM, 16);
+                                                tempMM = Convert.ToString(bit, 2);
+                                                while (tempMM.Length < 8)
+                                                {
+                                                    tempMM = "0" + tempMM;
+                                                }
+
+                                                if (tempMM[7] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Incubateabnormal + "\n";
+                                                }
+                                                if (tempMM[6] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Incubateverticalabnormal + "\n";
+                                                }
+                                                if (tempMM[5] != '1')
+                                                {
+                                                    ErrorMessage = ErrorMessage + Res.Incubatepressureabnormal + "\n";
+                                                }
+                                            }
+                                        }
+                                        //dw 2018.12.18
+                                        #endregion
+
+                                        LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "DiagnostDone.Set释放信号之前"));
+                                        totalOrderFlag = true;
+                                        errorFlag = (int)ErrorState.Success;
+                                        DiagnostDone.Set();
+                                        if (orderTemp == "11 AF") WhereToReceive = 2;
+                                    }
+                                    //下位机收到上位机指令
+                                    //else if (orderTemp == "00 00")//y modify 20180802
+                                    //{
+                                    //    if (waitAndAgainSend is Thread && waitAndAgainSend != null)
+                                    //    {
+                                    //        totalOrderFlag = true;
+                                    //        waitAndAgainSend.Abort();
+                                    //    }
+                                    //}
+
+                                    //移管手模块动作执行完毕
+                                    else if (orderTemp == "31 A1")//20180717 y 增加了撞针等出错处理
+                                    {
+                                        int tempInt = tempResponse.IndexOf("EB 90 31 A1 ");
+                                        string temp = tempResponse.Substring(tempInt + 12, 2);
+                                        Byte bit = Convert.ToByte(temp, 16);
+                                        if (bit != Byte.MaxValue)
+                                        {
+                                            temp = Convert.ToString(bit, 2);
+                                            while (temp.Length < 8)
+                                            {
+                                                temp = "0" + temp;
+                                            }
+                                            if (temp.Substring(0, 1) == "0")//为空
+                                            {
+                                                MoverrorFlag = (int)ErrorState.IsNull;
+                                            }
+                                            if (temp.Substring(1, 1) == "0")//取管撞管
+                                            {
+                                                MoverrorFlag = (int)ErrorState.IsKnocked;
+                                            }
+                                            if (temp.Substring(2, 1) == "0")//放管撞管
+                                            {
+                                                MoverrorFlag = (int)ErrorState.putKnocked;
+                                            }
+                                            if (temp.Substring(4, 1) == "0")//理杯机缺管
+                                            {
+                                                MoverrorFlag = (int)ErrorState.LackTube;
+                                            }
                                         }
                                         else
                                         {
-                                            tempInt = tempResponse.IndexOf("EB 90 F1 02 ");
+                                            MoverrorFlag = (int)ErrorState.Success;//成功
                                         }
-                                        //int tempInt = tempResponse.IndexOf("EB 90 F1 02 00 ");
-                                        //初始化检测II：加样模块光电信号
-                                        string tempII = tempResponse.Substring(tempInt + 15, 2);
-                                        //判断II位为1F
-                                        frmMessageShow frmMS;
-                                        ErrorMessage = null;
-                                        if (tempII != "1F")
+                                        MoveReciveFlag = true;
+                                        movereceiveDone.Set();
+                                    }
+                                    //加样系统动作执行完毕
+                                    else if (orderTemp == "31 A2")//20180717 y 增加了撞针等出错处理
+                                    {
+                                        int tempInt = tempResponse.IndexOf("EB 90 31 A2 ");
+                                        string temp = tempResponse.Substring(tempInt + 12, 2);
+                                        if (temp == "7F")//加液针撞针
                                         {
-
-                                            Byte bit = Convert.ToByte(tempII, 16);
-                                            tempII = Convert.ToString(bit, 2);
-                                            while (tempII.Length < 8)
-                                            {
-                                                tempII = "0" + tempII;
-                                            }
-                                            if (tempII[7] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Sampleabnormal + "\n";
-                                            }
-                                            if (tempII[6] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Reagentabnormal + "\n";
-                                            }
-                                            if (tempII[5] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Verticalanomal + "\n";
-                                            }
-                                            if (tempII[4] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Rotationabnormal + "\n";
-                                            }
-                                            if (tempII[3] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Plungerabnormal + "\n";
-                                            }
+                                            AdderrorFlag = (int)ErrorState.IsKnocked;
                                         }
-
-                                        //初始化检测JJ：抓手模块光电信号
-                                        string tempJJ = tempResponse.Substring(tempInt + 18, 2);
-                                        //判断JJ位为FF
-                                        if (tempJJ != "3F")
+                                        else
                                         {
-                                            Byte bit = Convert.ToByte(tempJJ, 16);
-                                            tempJJ = Convert.ToString(bit, 2);
-                                            while (tempJJ.Length < 8)
-                                            {
-                                                tempJJ = "0" + tempJJ;
-                                            }
-                                            if (tempJJ[7] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Cupabnormal + "\n";
-                                            }
-                                            if (tempJJ[6] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Temporaryabnormal + "\n";
-                                            }
-                                            if (tempJJ[5] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Verticalphotoelectricabnormal + "\n";
-                                            }
-                                            if (tempJJ[4] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Rotatingphotoelectricabnormal + "\n";
-                                            }
-                                            if (tempJJ[3] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Gripperabnormal + "\n";
-                                            }
-                                            if (tempJJ[2] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Emptyabnormal + "\n";
-                                            }
+                                            AdderrorFlag = (int)ErrorState.Success;
+                                        }
+                                        LiquidLevelDetectionFlag = (int)((Convert.ToInt32(tempResponse.Substring(tempInt + 15, 2) +
+                                            tempResponse.Substring(tempInt + 18, 2), 16) > 0) ? LiquidLevelDetectionAlarm.Height : LiquidLevelDetectionAlarm.Low);
+                                        SpReciveFlag = true;
+                                        spreceiveDone.Set();
+                                    }
+                                    else if (orderTemp == "31 A4")//混匀完成指令
+                                    {
+                                        AdderrorFlag = (int)ErrorState.Success;//成功
+                                        SpReciveFlag = true;
+                                        spreceiveDone.Set();
+                                    }
+                                    //清洗系统动作执行完毕
+                                    else if (orderTemp == "31 A3")
+                                    {
+                                        WasherrorFlag = (int)ErrorState.Success;
+                                        WashReciveFlag = true;
+                                        washreceiveDone.Set();
+                                    }
+                                    //IAP过程相关指令返回
+                                    else if (orderTemp == "55 01" || orderTemp == "0A A0" || orderTemp == "6A A6" || orderTemp2 == "B0 0")
+                                    {
+                                        if (orderTemp3 == "B0 03 FF") //开始传输IAP文件
+                                        {
+                                            LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "IAP开始进行文件传输烧录"));
 
                                         }
-                                        //初始化检测KK：清洗模块光电信号
-                                        string tempKK = tempResponse.Substring(tempInt + 21, 2);
-                                        if (tempKK != "F")
+                                        else if (orderTemp3 == "B0 04 FF")
                                         {
-                                            Byte bit = Convert.ToByte(tempKK, 16);
-                                            tempKK = Convert.ToString(bit, 2);
-                                            while (tempKK.Length < 8)
-                                            {
-                                                tempKK = "0" + tempKK;
-                                            }
-
-                                            if (tempKK[7] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Cleanabnormal + "\n";
-                                            }
-                                            if (tempKK[6] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Pressureabnormal + "\n";
-                                            }
-                                            if (tempKK[5] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Cleanverticalabnormal + "\n";
-                                            }
-                                            if (tempKK[4] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Measureabnormal + "\n";
-                                            }
+                                            LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "IAP文件已传输完毕"));
+                                        }
+                                        else if (orderTemp3 == "B0 04 01")
+                                        {
+                                            LogFile.Instance.Write(String.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "IAP程序烧录失败"));
+                                        }
+                                        LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "DiagnostDone.Set释放信号之前"));
+                                        totalOrderFlag = true;
+                                        errorFlag = (int)ErrorState.Success;
+                                        DiagnostDone.Set();
+                                    }
+                                    if (WhereToReceive == 1)
+                                    {
+                                        LogFile.Instance.Write(DateTime.Now + ":thDataHandle 线程");
+                                        thDataHandle = new Thread(new ParameterizedThreadStart(HandleMessage));
+                                        thDataHandle.IsBackground = true;
+                                        if (thDataHandle.CurrentCulture != Language.AppCultureInfo)//lyq
+                                        {
+                                            thDataHandle.CurrentCulture = Language.AppCultureInfo;
+                                            thDataHandle.CurrentUICulture = Language.AppCultureInfo;
                                         }
 
-                                        //初始化检测KK：温育盘模块光电信号
-                                        string tempMM = tempResponse.Substring(tempInt + 24, 2);
-                                        if (tempMM != "7")
+                                        thDataHandle.Start(tempResponse);
+                                    }
+                                    else if (WhereToReceive == 2)
+                                    {
+                                        LogFile.Instance.Write(DateTime.Now + ":thDataHandle 线程");
+                                        thDataHandle = new Thread(new ParameterizedThreadStart(HandleMessageForTemperatureAndLiquidLevel));
+                                        thDataHandle.IsBackground = true;
+                                        if (thDataHandle.CurrentCulture != Language.AppCultureInfo)//lyq
                                         {
-                                            Byte bit = Convert.ToByte(tempMM, 16);
-                                            tempMM = Convert.ToString(bit, 2);
-                                            while (tempMM.Length < 8)
-                                            {
-                                                tempMM = "0" + tempMM;
-                                            }
-
-                                            if (tempMM[7] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Incubateabnormal + "\n";
-                                            }
-                                            if (tempMM[6] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Incubateverticalabnormal + "\n";
-                                            }
-                                            if (tempMM[5] != '1')
-                                            {
-                                                ErrorMessage = ErrorMessage + Res.Incubatepressureabnormal + "\n";
-                                            }
+                                            thDataHandle.CurrentCulture = Language.AppCultureInfo;
+                                            thDataHandle.CurrentUICulture = Language.AppCultureInfo;
                                         }
+                                        thDataHandle.Start(tempResponse);
                                     }
-                                    //dw 2018.12.18
-                                    #endregion
-
-                                    LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "DiagnostDone.Set释放信号之前"));
-                                    totalOrderFlag = true;
-                                    errorFlag = (int)ErrorState.Success;
-                                    DiagnostDone.Set();
-                                    if (orderTemp == "11 AF") WhereToReceive = 2;
                                 }
-                                //下位机收到上位机指令
-                                //else if (orderTemp == "00 00")//y modify 20180802
-                                //{
-                                //    if (waitAndAgainSend is Thread && waitAndAgainSend != null)
-                                //    {
-                                //        totalOrderFlag = true;
-                                //        waitAndAgainSend.Abort();
-                                //    }
-                                //}
-                                
-                                //移管手模块动作执行完毕
-                                else if (orderTemp == "31 A1")//20180717 y 增加了撞针等出错处理
-                                {
-                                    int tempInt = tempResponse.IndexOf("EB 90 31 A1 ");
-                                    string temp = tempResponse.Substring(tempInt + 12, 2);
-                                    Byte bit = Convert.ToByte(temp, 16);
-                                    if (bit != Byte.MaxValue)
-                                    {
-                                        temp = Convert.ToString(bit, 2);
-                                        while (temp.Length < 8)
-                                        {
-                                            temp = "0" + temp;
-                                        }
-                                        if (temp.Substring(0, 1) == "0")//为空
-                                        {
-                                            MoverrorFlag = (int)ErrorState.IsNull;
-                                        }
-                                        if (temp.Substring(1, 1) == "0")//取管撞管
-                                        {
-                                            MoverrorFlag = (int)ErrorState.IsKnocked;
-                                        }
-                                        if (temp.Substring(2, 1) == "0")//放管撞管
-                                        {
-                                            MoverrorFlag = (int)ErrorState.putKnocked;
-                                        }
-                                        if (temp.Substring(4, 1) == "0")//理杯机缺管
-                                        {
-                                            MoverrorFlag = (int)ErrorState.LackTube;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        MoverrorFlag = (int)ErrorState.Success;//成功
-                                    }
-                                    MoveReciveFlag = true;
-                                    movereceiveDone.Set();
-                                }
-                                //加样系统动作执行完毕
-                                else if (orderTemp == "31 A2")//20180717 y 增加了撞针等出错处理
-                                {
-                                    int tempInt = tempResponse.IndexOf("EB 90 31 A2 ");
-                                    string temp = tempResponse.Substring(tempInt + 12, 2);
-                                    if (temp == "7F")//加液针撞针
-                                    {
-                                        AdderrorFlag = (int)ErrorState.IsKnocked;
-                                    }
-                                    else
-                                    {
-                                        AdderrorFlag = (int)ErrorState.Success;
-                                    }
-                                    LiquidLevelDetectionFlag = (int)((Convert.ToInt32(tempResponse.Substring(tempInt + 15, 2) +
-                                        tempResponse.Substring(tempInt + 18, 2), 16) > 0) ? LiquidLevelDetectionAlarm.Height : LiquidLevelDetectionAlarm.Low);
-                                    SpReciveFlag = true;
-                                    spreceiveDone.Set();
-                                }
-                                else if (orderTemp == "31 A4")//混匀完成指令
-                                {
-                                    AdderrorFlag = (int)ErrorState.Success;//成功
-                                    SpReciveFlag = true;
-                                    spreceiveDone.Set();
-                                }
-                                //清洗系统动作执行完毕
-                                else if (orderTemp == "31 A3")
-                                {
-                                    WasherrorFlag = (int)ErrorState.Success;
-                                    WashReciveFlag = true;
-                                    washreceiveDone.Set();
-                                }
-                                //IAP过程相关指令返回
-                                else if (orderTemp == "55 01" || orderTemp == "0A A0" || orderTemp == "6A A6" || orderTemp2 == "B0 0")
-                                {
-                                    if (orderTemp3 == "B0 03 FF") //开始传输IAP文件
-                                    {
-                                        LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "IAP开始进行文件传输烧录"));
-
-                                    }
-                                    else if (orderTemp3 == "B0 04 FF")
-                                    {
-                                        LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "IAP文件已传输完毕"));
-                                    }
-                                    else if (orderTemp3 == "B0 04 01")
-                                    {
-                                        LogFile.Instance.Write(String.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "IAP程序烧录失败"));
-                                    }
-                                    LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "DiagnostDone.Set释放信号之前"));
-                                    totalOrderFlag = true;
-                                    errorFlag = (int)ErrorState.Success;
-                                    DiagnostDone.Set();
-                                }
-                                if (WhereToReceive == 1)
-                                {
-                                    LogFile.Instance.Write(DateTime.Now + ":thDataHandle 线程");
-                                    thDataHandle = new Thread(new ParameterizedThreadStart(HandleMessage));
-                                    thDataHandle.IsBackground = true;
-                                    if (thDataHandle.CurrentCulture != Language.AppCultureInfo)//lyq
-                                    {
-                                        thDataHandle.CurrentCulture = Language.AppCultureInfo;
-                                        thDataHandle.CurrentUICulture = Language.AppCultureInfo;
-                                    }
-                                   
-                                    thDataHandle.Start(tempResponse);
-                                }
-                                else if (WhereToReceive == 2)
-                                {
-                                    LogFile.Instance.Write(DateTime.Now + ":thDataHandle 线程");
-                                    thDataHandle = new Thread(new ParameterizedThreadStart(HandleMessageForTemperatureAndLiquidLevel));
-                                    thDataHandle.IsBackground = true;
-                                    if (thDataHandle.CurrentCulture != Language.AppCultureInfo)//lyq
-                                    {
-                                        thDataHandle.CurrentCulture = Language.AppCultureInfo;
-                                        thDataHandle.CurrentUICulture = Language.AppCultureInfo;
-                                    }
-                                    thDataHandle.Start(tempResponse);
-                                }
-                                //response = string.Empty;
-                                //if (orderTemp == "00 00")
-                                //{
-                                //    state.sb.Remove(0, state.sb.Length);
-                                //    state.buffer = new byte[StateObject.BufferSize];
-                                //    if (client.Connected)
-                                //    {
-                                //        // 获取其余的数据  
-                                //        client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
-                                //        //Thread.Sleep(300);
-                                //    }
-                                //    LogFile.Instance.Write(DateTime.Now + ":0");
-                                //}
                             }
-                        }
+                    complete:
+                        LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "数据处理完成！"));
+                        //})){ IsBackground = true }.Start();
+                       
                     }
                 }
                 catch (Exception e)
@@ -1689,13 +1692,14 @@ namespace BioBaseCLIA
                         if (client.Connected)
                         {
                             //获取其余的数据  
+                            //client.BeginReceive(state.buffer, 0, 16, 0, new AsyncCallback(ReceiveCallback), state);
                             client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
                         }
                     }
                     close();
                 }
             }
-
+            LogFile.Instance.Write(string.Format("{0}<-:{1}", DateTime.Now.ToString("HH:mm:ss:fff"), "数据接收完成！" ));
         }
 
         /// <summary>
@@ -1852,7 +1856,7 @@ namespace BioBaseCLIA
     // State object for receiving data from remote device. 
     /// <summary>
     /// 信息传输错误状态
-    /// 0-准备发送,1-成功 2-发送失败 3-接收失败 4-抓管撞管（撞针） 5-抓空 6-混匀异常 7-放管撞管 8-理杯机缺管 9-发送超时  10-理杯机卡管
+    /// 0-准备发送,1-成功 2-发送失败 3-接收失败 4-抓管撞管（撞针） 5-抓空 6-混匀异常 7-放管撞管 8-理杯机缺管 9-发送超时
     /// </summary>
     public enum ErrorState { ReadySend = 0, Success = 1, Sendfailure = 2, Recivefailure = 3, IsKnocked = 4, IsNull = 5, BlendUnusua = 6, putKnocked=7,LackTube=8,OverTime = 9,StuckTube=10 }
     /// <summary>
