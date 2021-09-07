@@ -9594,22 +9594,23 @@ namespace BioBaseCLIA.Run
                     }
                     #endregion
 
+                    string sconcentration = concentration;
                     if (double.IsNaN(double.Parse(concentration)))
                     {
-                        concentration = GetNanPmtConcentration(ItemName, Batch, pmt);
-                        result = getString("keywordText.NotInRange");
+                        concentration = GetNanPmtConcentration(ItemName, Batch, pmt, MinValue, MaxValue);
+                        sconcentration = concentration.Substring(1);
                     }
                     else if (double.Parse(concentration) < MinValue)
                     {
                         concentration = "<" + MinValue.ToString("#0.000");
-                        result = getString("keywordText.NotInRange");
+                        sconcentration = concentration.Substring(1);
                     }
                     else if (double.Parse(concentration) > (MaxValue))
                     {
                         concentration = ">" + (MaxValue).ToString("#0.000");
-                        result = getString("keywordText.NotInRange");
+                        sconcentration = concentration.Substring(1);
                     }
-                    else if (VRangeType != "" && int.Parse(VRangeType) > 0)
+                    if (VRangeType != "" && int.Parse(VRangeType) > 0)
                         result = "";
                     else
                     {
@@ -9626,11 +9627,11 @@ namespace BioBaseCLIA.Run
                             if (Range1.Contains("-"))
                             {
                                 string[] ranges = Range1.Split('-');
-                                if (double.Parse(concentration) < double.Parse(ranges[0]))
+                                if (double.Parse(sconcentration) < double.Parse(ranges[0]))
                                 {
                                     result = "↓";
                                 }
-                                else if (double.Parse(concentration) > double.Parse(ranges[1]))
+                                else if (double.Parse(sconcentration) > double.Parse(ranges[1]))
                                 {
                                     result = "↑";
                                 }
@@ -9639,7 +9640,7 @@ namespace BioBaseCLIA.Run
                             }
                             else if (Range1.Contains("<"))
                             {
-                                if (double.Parse(concentration) >= double.Parse(Range1.Substring(1)))
+                                if (double.Parse(sconcentration) >= double.Parse(Range1.Substring(1)))
                                 {
                                     result = "↑";
                                 }
@@ -9650,7 +9651,7 @@ namespace BioBaseCLIA.Run
                             }
                             else if (Range1.Contains("<="))
                             {
-                                if (double.Parse(concentration) > double.Parse(Range1.Substring(2)))
+                                if (double.Parse(sconcentration) > double.Parse(Range1.Substring(2)))
                                 {
                                     result = "↑";
                                 }
@@ -9661,7 +9662,7 @@ namespace BioBaseCLIA.Run
                             }
                             else if (Range1.Contains(">"))
                             {
-                                if (double.Parse(concentration) <= double.Parse(Range1.Substring(1)))
+                                if (double.Parse(sconcentration) <= double.Parse(Range1.Substring(1)))
                                 {
                                     result = "↓";
                                 }
@@ -9673,7 +9674,7 @@ namespace BioBaseCLIA.Run
                             }
                             else if (Range1.Contains(">="))
                             {
-                                if (double.Parse(concentration) < double.Parse(Range1.Substring(2)))
+                                if (double.Parse(sconcentration) < double.Parse(Range1.Substring(2)))
                                 {
                                     result = "↓";
                                 }
@@ -9734,7 +9735,7 @@ namespace BioBaseCLIA.Run
         /// <param name="batch">批号</param>
         /// <param name="pmt">发光值</param>
         /// <returns>显示.浓度</returns>
-        private string GetNanPmtConcentration(string name, string batch, int pmt)
+        private string GetNanPmtConcentration(string name, string batch, int pmt, double minValue, double maxValue)
         {
             string concentration = string.Empty;
             DbHelperOleDb dbflag = new DbHelperOleDb(0);
@@ -9749,7 +9750,7 @@ namespace BioBaseCLIA.Run
                 }
                 else
                 {
-                    concentration = ">" + scaling[scaling.Count - 1].Data.ToString("#0.000");
+                    concentration = ">" + maxValue.ToString("#0.000");
                 }
             }
             if (calMode == 2)
@@ -9760,7 +9761,7 @@ namespace BioBaseCLIA.Run
                 }
                 else
                 {
-                    concentration = ">" + scaling[scaling.Count - 1].Data.ToString("#0.000");
+                    concentration = ">" + maxValue.ToString("#0.000");
                 }
             }
 
