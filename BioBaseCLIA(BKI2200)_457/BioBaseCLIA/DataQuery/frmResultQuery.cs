@@ -231,91 +231,90 @@ namespace BioBaseCLIA.DataQuery
         private string GetResult(string ResultId, string concentration)
         {
             string Result = "";
-            //DbHelperOleDb db = new DbHelperOleDb(1);
-            //DataTable tbtbProject = DbHelperOleDb.Query(0, @"select Range from tbAssayResult where AssayResultID = '" + long.Parse(ResultId) + "'").Tables[0];
+            DbHelperOleDb db = new DbHelperOleDb(1);
             DataTable tbtbProject = DbHelperOleDb.Query(1, @"select Range from tbAssayResult where AssayResultID = " + long.Parse(ResultId) + "").Tables[0];
-            if (concentration.Contains("<"))
+            string Range = tbtbProject.Rows[0]["Range"].ToString();
+            string[] SpRange = Range.Split(' ');
+            Regex cn = new Regex("[\u4e00-\u9fa5]+");
+            db = new DbHelperOleDb(1);
+            DataTable tbProject = DbHelperOleDb.Query(1, @"select ItemName from tbAssayResult where AssayResultID = " + long.Parse(ResultId) + "").Tables[0];
+            string itemname = tbProject.Rows[0]["ItemName"].ToString();
+            DbHelperOleDb ds = new DbHelperOleDb(0);
+            double MinValue = double.Parse(DbHelperOleDb.GetSingle(0, @"select MinValue from tbProject where ShortName = '" + itemname + "'").ToString());
+            double MaxValue = double.Parse(DbHelperOleDb.GetSingle(0, @"select MaxValue from tbProject where ShortName = '" + itemname + "'").ToString());
+            string sconcentration = concentration;
+            if (concentration.Contains("<") || concentration.Contains(">"))
             {
-                Result = Getstring("NotRangeMessage");
+                sconcentration = concentration.Substring(1);
+                //Result = Getstring("NotRangeMessage");
             }
-            else if (concentration.Contains(">"))
+            if (cn.IsMatch(Range))//range1字符串中有中文
             {
-                Result = Getstring("NotRangeMessage");
+                Result = "";
+            }
+            else if (Regex.Matches(Range, "[a-zA-Z]").Count > 0)//range1字符串中有英文
+            {
+                Result = "";
             }
             else
             {
-                string Range = tbtbProject.Rows[0]["Range"].ToString();
-                Regex cn = new Regex("[\u4e00-\u9fa5]+");
-                //string[] SpRange = Range.Split(' ');
-
-                if (cn.IsMatch(Range))//range1字符串中有中文
+                double dconcentration = double.Parse(sconcentration);
+                if (Range.Contains("-"))
                 {
-                    Result = "";
+                    string[] ranges = Range.Split('-');
+                    if (dconcentration < double.Parse(ranges[0]))
+                    {
+                        Result = "↓";
+                    }
+                    else if (dconcentration > double.Parse(ranges[1]))
+                    {
+                        Result = "↑";
+                    }
+                    else
+                        Result = Getstring("Normal");
                 }
-                else if (Regex.Matches(Range, "[a-zA-Z]").Count > 0)//range1字符串中有英文
+                else if (Range.Contains("<"))
                 {
-                    Result = "";
+                    if (dconcentration >= double.Parse(Range.Substring(1)))
+                    {
+                        Result = "↑";
+                    }
+                    else
+                    {
+                        Result = Getstring("Normal");
+                    }
                 }
-                else
+                else if (Range.Contains("<="))
                 {
-                    double dconcentration = double.Parse(concentration);
-                    if (Range.Contains("-"))
+                    if (dconcentration > double.Parse(Range.Substring(2)))
                     {
-                        string[] ranges = Range.Split('-');
-                        if (dconcentration < double.Parse(ranges[0]))
-                        {
-                            Result = "↓";
-                        }
-                        else if (dconcentration > double.Parse(ranges[1]))
-                        {
-                            Result = "↑";
-                        }
-                        else
-                            Result = Getstring("Normal");
+                        Result = "↑";
                     }
-                    else if (Range.Contains("<"))
+                    else
                     {
-                        if (dconcentration >= double.Parse(Range.Substring(1)))
-                        {
-                            Result = "↑";
-                        }
-                        else
-                        {
-                            Result = Getstring("Normal");
-                        }
+                        Result = Getstring("Normal");
                     }
-                    else if (Range.Contains("<="))
+                }
+                else if (Range.Contains(">"))
+                {
+                    if (dconcentration <= double.Parse(Range.Substring(1)))
                     {
-                        if (dconcentration > double.Parse(Range.Substring(2)))
-                        {
-                            Result = "↑";
-                        }
-                        else
-                        {
-                            Result = Getstring("Normal");
-                        }
+                        Result = "↓";
                     }
-                    else if (Range.Contains(">"))
+                    else
                     {
-                        if (dconcentration <= double.Parse(Range.Substring(1)))
-                        {
-                            Result = "↓";
-                        }
-                        else
-                        {
-                            Result = Getstring("Normal");
-                        }
+                        Result = Getstring("Normal");
                     }
-                    else if (Range.Contains(">="))
+                }
+                else if (Range.Contains(">="))
+                {
+                    if (dconcentration < double.Parse(Range.Substring(2)))
                     {
-                        if (dconcentration < double.Parse(Range.Substring(2)))
-                        {
-                            Result = "↓";
-                        }
-                        else
-                        {
-                            Result = Getstring("Normal");
-                        }
+                        Result = "↓";
+                    }
+                    else
+                    {
+                        Result = Getstring("Normal");
                     }
                 }
             }
@@ -330,7 +329,7 @@ namespace BioBaseCLIA.DataQuery
             DbHelperOleDb DB = new DbHelperOleDb(1);
             for (int i = 0; i < dgvSampleData.SelectedRows.Count; i++)
             {
-                DbHelperOleDb.ExecuteSql(1, @"update tbAssayResult set Concentration = " + 
+                DbHelperOleDb.ExecuteSql(1, @"update tbAssayResult set Concentration = " +
                dgvSampleData.SelectedRows[i].Cells[7].Value.ToString() + " where AssayResultID = " + int.Parse
                (dgvSampleData.SelectedRows[i].Cells[1].Value.ToString()));
             }
@@ -408,11 +407,11 @@ namespace BioBaseCLIA.DataQuery
                 {
                     modelPath += "A5ZH-模版一.frx";
                 }
-                else if (printModel.Contains("模版二")|| printModel.Contains("2"))
+                else if (printModel.Contains("模版二") || printModel.Contains("2"))
                 {
                     modelPath += "A5ZH-模版二.frx";
                 }
-                else if (printModel.Contains("模版三")|| printModel.Contains("3"))
+                else if (printModel.Contains("模版三") || printModel.Contains("3"))
                 {
                     modelPath += "A5ZH-模版三.frx";
                 }
