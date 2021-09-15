@@ -1100,7 +1100,10 @@ namespace BioBaseCLIA
                     #endregion
                     break;
                 case "08":
-                    DealRefrigeration(dataRecive);
+                    if(dataRecive[5] == "08")
+                    {
+                        DealRefrigeration(dataRecive);
+                    }
                     break;
                 default:
                     break;
