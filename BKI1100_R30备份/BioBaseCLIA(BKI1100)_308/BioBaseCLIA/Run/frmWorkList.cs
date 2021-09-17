@@ -462,6 +462,10 @@ namespace BioBaseCLIA.Run
         /// 液位检测报警事件
         /// </summary>
         public static event Action<string, int> LiquidLevelDetectionEvent;
+        /// <summary>
+        /// 发光值校准系数
+        /// </summary>
+        public static string Coefficient = OperateIniFile.ReadInIPara("ResultCoefficient", "Coefficient");
 
         public frmWorkList()
         {
@@ -9605,22 +9609,23 @@ namespace BioBaseCLIA.Run
                     }
                     #endregion
 
+                    string sconcentration = concentration;
                     if (double.IsNaN(double.Parse(concentration)))
                     {
-                        concentration = GetNanPmtConcentration(ItemName, Batch, pmt);
-                        result = getString("keywordText.NotInRange");
+                        concentration = GetNanPmtConcentration(ItemName, Batch, pmt, MinValue, MaxValue);
+                        sconcentration = concentration.Substring(1);
                     }
                     else if (double.Parse(concentration) < MinValue)
                     {
                         concentration = "<" + MinValue.ToString("#0.000");
-                        result = getString("keywordText.NotInRange");
+                        sconcentration = concentration.Substring(1);
                     }
                     else if (double.Parse(concentration) > (MaxValue))
                     {
                         concentration = ">" + (MaxValue).ToString("#0.000");
-                        result = getString("keywordText.NotInRange");
+                        sconcentration = concentration.Substring(1);
                     }
-                    else if (VRangeType != "" && int.Parse(VRangeType) > 0)
+                    if (VRangeType != "" && int.Parse(VRangeType) > 0)
                         result = "";
                     else
                     {
@@ -9637,11 +9642,11 @@ namespace BioBaseCLIA.Run
                             if (Range1.Contains("-"))
                             {
                                 string[] ranges = Range1.Split('-');
-                                if (double.Parse(concentration) < double.Parse(ranges[0]))
+                                if (double.Parse(sconcentration) < double.Parse(ranges[0]))
                                 {
                                     result = "↓";
                                 }
-                                else if (double.Parse(concentration) > double.Parse(ranges[1]))
+                                else if (double.Parse(sconcentration) > double.Parse(ranges[1]))
                                 {
                                     result = "↑";
                                 }
@@ -9650,7 +9655,7 @@ namespace BioBaseCLIA.Run
                             }
                             else if (Range1.Contains("<"))
                             {
-                                if (double.Parse(concentration) >= double.Parse(Range1.Substring(1)))
+                                if (double.Parse(sconcentration) >= double.Parse(Range1.Substring(1)))
                                 {
                                     result = "↑";
                                 }
@@ -9661,7 +9666,7 @@ namespace BioBaseCLIA.Run
                             }
                             else if (Range1.Contains("<="))
                             {
-                                if (double.Parse(concentration) > double.Parse(Range1.Substring(2)))
+                                if (double.Parse(sconcentration) > double.Parse(Range1.Substring(2)))
                                 {
                                     result = "↑";
                                 }
@@ -9672,7 +9677,7 @@ namespace BioBaseCLIA.Run
                             }
                             else if (Range1.Contains(">"))
                             {
-                                if (double.Parse(concentration) <= double.Parse(Range1.Substring(1)))
+                                if (double.Parse(sconcentration) <= double.Parse(Range1.Substring(1)))
                                 {
                                     result = "↓";
                                 }
@@ -9684,7 +9689,7 @@ namespace BioBaseCLIA.Run
                             }
                             else if (Range1.Contains(">="))
                             {
-                                if (double.Parse(concentration) < double.Parse(Range1.Substring(2)))
+                                if (double.Parse(sconcentration) < double.Parse(Range1.Substring(2)))
                                 {
                                     result = "↓";
                                 }
@@ -9745,7 +9750,7 @@ namespace BioBaseCLIA.Run
         /// <param name="batch">批号</param>
         /// <param name="pmt">发光值</param>
         /// <returns>显示.浓度</returns>
-        private string GetNanPmtConcentration(string name, string batch, int pmt)
+        private string GetNanPmtConcentration(string name, string batch, int pmt, double minValue, double maxValue)
         {
             string concentration = string.Empty;
             DbHelperOleDb dbflag = new DbHelperOleDb(0);
@@ -9760,7 +9765,7 @@ namespace BioBaseCLIA.Run
                 }
                 else
                 {
-                    concentration = ">" + scaling[scaling.Count - 1].Data.ToString("#0.000");
+                    concentration = ">" + maxValue.ToString("#0.000");
                 }
             }
             if (calMode == 2)
@@ -9771,7 +9776,7 @@ namespace BioBaseCLIA.Run
                 }
                 else
                 {
-                    concentration = ">" + scaling[scaling.Count - 1].Data.ToString("#0.000");
+                    concentration = ">" + maxValue.ToString("#0.000");
                 }
             }
 
@@ -9787,26 +9792,45 @@ namespace BioBaseCLIA.Run
         {
             if (lisTiEnd.Count == BToListTi.Count)
                 frmTestResult.BRun = false;
-            LogFile.Instance.Write("*********  发光值  ： " + testResult.PMT + "  **********");
+            var testresult = new TestResult();
+            testresult.PMT = testResult.PMT;
+            testresult.SampleID = testResult.SampleID;
+            testresult.TestID = testResult.TestID;
+            testresult.SampleNo = testResult.SampleNo;
+            testresult.SamplePos = testResult.SamplePos;
+            testresult.SampleType = testResult.SampleType;
+            testresult.ItemName = testResult.ItemName;
+            testresult.concentration = testResult.concentration;
+            testresult.Result = testResult.Result;
+            testresult.sco = testResult.sco;
+            testresult.Range1 = testResult.Range1;
+            testresult.Range2 = testResult.Range2;
+            testresult.Status = testResult.Status;
+            testresult.ReagentBeach = testResult.ReagentBeach;
+            testresult.SubstratePipe = testResult.SubstratePipe;
+            testresult.Unit = testResult.Unit;
+            testresult.ResultDatetime = testResult.ResultDatetime;
+            LogFile.Instance.Write("*********  发光值  ： " + testresult.PMT + "  **********");
 
             //调度到主线程添加的目的是为了保证结果列表添加刷新，但是有可能丢失数据
             this.Invoke(new Action(() =>
             {
-                BTestResult.Add(testResult);
-                TemporaryTestResult.Add(testResult);
+                BTestResult.Add(testresult);
+                TemporaryTestResult.Add(testresult);
             }));
 
-            if (testResult.SampleType.Contains(getString("keywordText.Standard")))
+            if (testresult.SampleType.Contains(getString("keywordText.Standard")))
             {
-                GC.KeepAlive(testResult);//防止被回收               
-                List<TestItem> BToList = BToListTi.FindAll(tx => (tx.ItemName == testResult.ItemName && tx.SampleType.Contains(getString("keywordText.Standard")) && tx.RegentBatch == dgvWorkListData.Rows[testResult.TestID - 1].Cells["RegentBatch"].Value.ToString()));
-                List<TestItem> ENDList = lisTiEnd.FindAll(tx => (tx.ItemName == testResult.ItemName && tx.SampleType.Contains(getString("keywordText.Standard")) && tx.RegentBatch == dgvWorkListData.Rows[testResult.TestID - 1].Cells["RegentBatch"].Value.ToString()));
+                GC.KeepAlive(testresult);//防止被回收               
+                List<TestItem> BToList = BToListTi.FindAll(tx => (tx.ItemName == testresult.ItemName && tx.SampleType.Contains(getString("keywordText.Standard")) && tx.RegentBatch == dgvWorkListData.Rows[testresult.TestID - 1].Cells["RegentBatch"].Value.ToString()));
+                List<TestItem> ENDList = lisTiEnd.FindAll(tx => (tx.ItemName == testresult.ItemName && tx.SampleType.Contains(getString("keywordText.Standard")) && tx.RegentBatch == dgvWorkListData.Rows[testresult.TestID - 1].Cells["RegentBatch"].Value.ToString()));
                 if (BToList.Count == ENDList.Count)
                 {
                     //List<TestResult> ScalingResult = new List<TestResult>(BTestResult).FindAll(tx => (tx.ItemName == testResult.ItemName && testResult.SampleType.Contains(getString("keywordText.Standard"))));
                     //frmTestResult f = new frmTestResult();
-                    List<TestResult> ScalingResult = new List<TestResult>(TemporaryTestResult).FindAll(tx => (tx.ItemName == testResult.ItemName && testResult.SampleType.Contains(getString("keywordText.Standard")) && tx.ReagentBeach == testResult.ReagentBeach));
-                    LogFile.Instance.Write(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")+ ":ScalingResult.Count:" + ScalingResult.Count+ ";ReagentBeach"+ dgvWorkListData.Rows[testResult.TestID - 1].Cells["RegentBatch"].Value.ToString());
+                    List<TestResult> ScalingResult = new List<TestResult>(TemporaryTestResult).FindAll(tx => (tx.ItemName == testresult.ItemName &&
+                    testresult.SampleType.Contains(getString("keywordText.Standard"))) && testresult.ReagentBeach == testresult.ReagentBeach);
+
                     Invoke(new Action(() =>
                     {
                         frmTestResult f;
@@ -9828,7 +9852,7 @@ namespace BioBaseCLIA.Run
                 }
             }
             else
-                SaveResultDate(testResult);
+                SaveResultDate(testresult);
             SendLisData(lis1, lis2);
             testResult = new TestResult();
         }
@@ -9963,6 +9987,7 @@ namespace BioBaseCLIA.Run
                 modelQCResult.ConcSPEC = "";
                 modelQCResult.ItemName = result.ItemName;
                 modelQCResult.PMTCounter = result.PMT;
+                modelQCResult.PMTCounter = (int)((double)result.PMT * double.Parse(Coefficient));
                 modelQCResult.QCID = int.Parse(dtQCInfo.Rows[0][0].ToString());
                 modelQCResult.Source = 0;
                 modelQCResult.TestDate = DateTime.Now;
@@ -9990,6 +10015,7 @@ namespace BioBaseCLIA.Run
                 modelAssayResult.DiluteCount = 0;
                 modelAssayResult.ItemName = result.ItemName;
                 modelAssayResult.PMTCounter = result.PMT;
+                modelAssayResult.PMTCounter = (int)((double)result.PMT * double.Parse(Coefficient));
                 modelAssayResult.Range = result.Range1 + " " + result.Range2;
                 modelAssayResult.Result = result.Result;
                 modelAssayResult.Specification = "";
