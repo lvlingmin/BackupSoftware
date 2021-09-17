@@ -441,7 +441,11 @@ namespace BioBaseCLIA.DataQuery
                     {
                         dgvSampleData.Rows[i].Selected = true;
                         dr = dtTestResult.NewRow();
-                        dr["ShortName"] = dgvSampleData.Rows[i].Cells["ItemName"].Value.ToString();//dtPro.Select("ShortName = '" + dgvSampleData.Rows[i].Cells["ItemName"].Value.ToString() + "'")[0]["FullName"].ToString();//lyq/*dgvSampleData.Rows[i].Cells["ItemName"].Value.ToString();*/
+                        DataRow[] drPro = dtPro.Select("ShortName = '" + dgvSampleData.Rows[i].Cells["ItemName"].Value.ToString() + "'");
+                        if (drPro.Length > 0)
+                            dr["ShortName"] = drPro[0]["FullName"].ToString();
+                        else
+                            dr["ShortName"] = dgvSampleData.Rows[i].Cells["ItemName"].Value.ToString();//lyq/*dgvSampleData.Rows[i].Cells["ItemName"].Value.ToString();*/
                         dr["Concentration"] = dgvSampleData.Rows[i].Cells["Concentration"].Value.ToString();
                         dr["Result"] = dgvSampleData.Rows[i].Cells["Result"].Value.ToString();
                         dr["Range1"] = dgvSampleData.Rows[i].Cells["Range"].Value.ToString();
