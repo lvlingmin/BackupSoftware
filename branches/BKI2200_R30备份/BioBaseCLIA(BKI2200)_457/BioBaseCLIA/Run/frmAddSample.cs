@@ -1133,7 +1133,7 @@ namespace BioBaseCLIA.Run
                                 }
 
                                 int regentNoStart = SelectDtRgInfoNoStat(ShortName, false);
-                                if (cmbSpType.Text.Trim() == ("keywordText.StandardPlasmids"))
+                                if (cmbSpType.Text.Trim().Contains(getString("keywordText.Standard")))
                                 {
                                     db = new DbHelperOleDb(0);
                                     DataTable dtProject = bllPj.GetList("ActiveStatus=1 AND ShortName='" + ShortName + "'").Tables[0];
