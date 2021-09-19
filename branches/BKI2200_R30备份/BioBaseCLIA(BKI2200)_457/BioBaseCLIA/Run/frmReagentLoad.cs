@@ -906,7 +906,7 @@ namespace BioBaseCLIA.Run
                 txtRgLastTest.Focus();
                 return;
             }
-            DataRow[] datas = dtSpInfo.Select("Status = 0 ");//and ItemName='" + cmbRgName.Text.ToString() + "'
+            DataRow[] datas = dtSpInfo.Select("Status = 0 and ItemName='" + cmbRgName.Text.ToString() + "'");//
             foreach (DataRow dr in datas)
             {
                 if (dr["ItemName"].ToString().Contains(cmbRgName.Text.ToString()))
