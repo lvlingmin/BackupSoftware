@@ -1,0 +1,20 @@
+
+************************************************************************
+An unhandled exception occurred in the application:：12/29/2021 11:38:13 AM
+Exception Type：Win32Exception
+Exception Message：Error creating window handle.
+Exception Infomations：   at System.Windows.Forms.NativeWindow.CreateHandle(CreateParams cp)
+   at System.Windows.Forms.Control.CreateHandle()
+   at System.Windows.Forms.Control.get_Handle()
+   at System.Windows.Forms.Control.get_WindowText()
+   at System.Windows.Forms.Control.set_CacheTextInternal(Boolean value)
+   at System.Windows.Forms.Control.PaintWithErrorHandling(PaintEventArgs e, Int16 layer)
+   at System.Windows.Forms.Control.WmPaint(Message& m)
+   at System.Windows.Forms.Control.WndProc(Message& m)
+   at System.Windows.Forms.MdiClient.WndProc(Message& m)
+   at System.Windows.Forms.Control.ControlNativeWindow.OnMessage(Message& m)
+   at System.Windows.Forms.Control.ControlNativeWindow.WndProc(Message& m)
+   at System.Windows.Forms.NativeWindow.Callback(IntPtr hWnd, Int32 msg, IntPtr wparam, IntPtr lparam)
+
+************************************************************************
+
